@@ -136,7 +136,7 @@ export const addProgram = mutation({
       allowedAttributes: {
         a: ["href", "target", "rel"],
       },
-      disallowedTagsMode: "discard",
+      // disallowedTagsMode: "discard",
     });
 
     // Validate intake date format
