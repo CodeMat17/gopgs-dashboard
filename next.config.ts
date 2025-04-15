@@ -24,6 +24,16 @@ const nextConfig: NextConfig = {
         hostname: "polite-monitor-553.convex.cloud",
         port: "",
       },
+      {
+        protocol: "https",
+        hostname: "picsum.photos",
+        port: "",
+      },
+      {
+        protocol: "https",
+        hostname: "images.pexels.com",
+        port: "",
+      },
     ],
   },
 };

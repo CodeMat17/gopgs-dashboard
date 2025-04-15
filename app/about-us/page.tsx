@@ -118,7 +118,7 @@ export default function AdminDashboard() {
       <Card className='p-6 mb-8'>
         <h2 className='text-xl font-bold mb-4'>Update Mission</h2>
         {!missions ? (
-          <p className='text-gray-500'>Loading missions...</p>
+          <p className='text-gray-500'>Loading mission...</p>
         ) : missions.length > 0 ? (
           missions.map((mission) => (
             <div key={mission._id} className='mb-4 space-y-4'>
@@ -155,7 +155,7 @@ export default function AdminDashboard() {
       <Card className='p-6'>
         <h2 className='text-xl font-bold mb-4'>Update Vision</h2>
         {!visions ? (
-          <p className='text-gray-500'>Loading visions...</p>
+          <p className='text-gray-500'>Loading vision...</p>
         ) : visions.length > 0 ? (
           visions.map((vision) => (
             <div key={vision._id} className='mb-4 space-y-4'>

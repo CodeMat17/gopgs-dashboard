@@ -140,4 +140,20 @@ export default defineSchema({
       )
     ),
   }),
+
+  news: defineTable({
+    title: v.string(),
+    slug: v.string(),
+    content: v.string(),
+    excerpt: v.optional(v.string()),
+    coverImage: v.string(),
+    author: v.string(),
+    publicationDate: v.optional(v.number()),
+    views: v.number(),
+    updatedOn: v.optional(v.string()),
+    tags: v.optional(v.array(v.string())),
+    storageId: v.optional(v.id("_storage"))
+  })
+    .index("by_slug", ["slug"])
+    .index("by_date", ["publicationDate"]),
 });
