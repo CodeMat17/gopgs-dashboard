@@ -9,7 +9,10 @@ export default {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
-  	extend: {
+	  extend: {
+			  boxShadow: {
+        'active-tab': '0 2px 4px -1px rgba(0, 0, 0, 0.1)',
+      },
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',

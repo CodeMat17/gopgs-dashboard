@@ -1,6 +1,12 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+export const courseType = v.union(
+  v.literal("pgd"),
+  v.literal("masters"),
+  v.literal("phd")
+);
+
 export default defineSchema({
   hero: defineTable({
     title: v.string(),
@@ -152,8 +158,25 @@ export default defineSchema({
     views: v.number(),
     updatedOn: v.optional(v.string()),
     tags: v.optional(v.array(v.string())),
-    storageId: v.optional(v.id("_storage"))
+    storageId: v.optional(v.id("_storage")),
   })
     .index("by_slug", ["slug"])
     .index("by_date", ["publicationDate"]),
+
+  courses: defineTable({
+    course: v.string(),
+    slug: v.string(),
+    duration: v.string(),
+    mode: v.string(),
+    overview: v.string(),
+    type: courseType,
+    whyChoose: v.array(
+      v.object({
+        title: v.string(),
+        description: v.string(),
+      })
+    ),
+  })
+    .index("by_slug", ["slug"])
+    .index("by_type", ["type"]),
 });

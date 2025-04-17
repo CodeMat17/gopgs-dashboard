@@ -31,8 +31,8 @@ const items = [
     icon: ListChecks,
   },
   {
-    title: "Programs",
-    url: "/programs",
+    title: "Courses",
+    url: "/courses",
     icon: BookOpen,
   },
   {
