@@ -20,6 +20,7 @@ import type * as contactUs from "../contactUs.js";
 import type * as courses from "../courses.js";
 import type * as getAllContent from "../getAllContent.js";
 import type * as hero from "../hero.js";
+import type * as howToApply from "../howToApply.js";
 import type * as mission from "../mission.js";
 import type * as mutations from "../mutations.js";
 import type * as news from "../news.js";
@@ -44,6 +45,7 @@ declare const fullApi: ApiFromModules<{
   courses: typeof courses;
   getAllContent: typeof getAllContent;
   hero: typeof hero;
+  howToApply: typeof howToApply;
   mission: typeof mission;
   mutations: typeof mutations;
   news: typeof news;

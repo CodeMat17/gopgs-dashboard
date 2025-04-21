@@ -33,6 +33,7 @@ const PhdCourses = () => {
               duration={phd.duration}
               mode={phd.mode}
               whyChoose={phd.whyChoose}
+              faculty={phd.faculty ?? ''}
             />
           ))}
         </div>

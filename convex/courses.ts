@@ -30,6 +30,7 @@ export const addCourse = mutation({
     duration: v.string(),
     overview: v.string(),
     mode: v.string(),
+    faculty: v.string(),
     whyChoose: v.array(
       v.object({
         title: v.string(),
@@ -92,6 +93,7 @@ export const updateCourse = mutation({
     ),
     duration: v.optional(v.string()),
     mode: v.optional(v.string()),
+    faculty: v.optional(v.string())
   },
   handler: async (ctx, args) => {
     // Get existing course data
@@ -115,6 +117,7 @@ export const updateCourse = mutation({
       duration?: string;
       mode?: string;
       slug?: string;
+      faculty?: string,
     } = {};
 
     // Only update provided fields
@@ -123,6 +126,7 @@ export const updateCourse = mutation({
     if (args.whyChoose !== undefined) updateData.whyChoose = args.whyChoose;
     if (args.duration !== undefined) updateData.duration = args.duration;
     if (args.mode !== undefined) updateData.mode = args.mode;
+     if (args.faculty !== undefined) updateData.faculty = args.faculty;
     if (slug !== existingCourse.slug) updateData.slug = slug;
 
     await ctx.db.patch(args.id, updateData);

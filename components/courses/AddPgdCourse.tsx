@@ -39,6 +39,7 @@ const AddPgdCourse = () => {
   const [duration, setDuration] = useState("");
   const [mode, setMode] = useState("");
   const [overview, setOverview] = useState("");
+   const [faculty, setFaculty] = useState("");
   const [whyChoose, setWhyChoose] = useState<
     { title: string; description: string }[]
   >([]);
@@ -63,7 +64,7 @@ const AddPgdCourse = () => {
 
   const handleSubmit = async () => {
     // Validate all required fields
-    if (!course || !duration || !mode || !overview) {
+    if (!course || !duration || !mode || !overview || !faculty) {
       toast.error("All fields are required");
       return;
     }
@@ -83,7 +84,7 @@ const AddPgdCourse = () => {
         course,
         duration,
         mode,
-        overview,
+        overview, faculty,
         whyChoose: validWhyChoose,
         type: "pgd",
         slug: generateSlug(course),
@@ -106,6 +107,7 @@ const AddPgdCourse = () => {
     setDuration("");
     setMode("");
     setOverview("");
+    setFaculty('')
     setWhyChoose([]);
   };
 
@@ -123,6 +125,15 @@ const AddPgdCourse = () => {
         </DialogHeader>
 
         <div className='space-y-4 overflow-y-auto flex-1 py-4'>
+          <div className='space-y-1'>
+            <label className='text-sm font-medium'>Faculty *</label>
+            <Input
+              placeholder='Enter course name'
+              value={faculty}
+              onChange={(e) => setFaculty(e.target.value)}
+            />
+          </div>
+
           <div className='space-y-1'>
             <label className='text-sm font-medium'>Course Name *</label>
             <Input
@@ -168,10 +179,7 @@ const AddPgdCourse = () => {
 
           <div className='space-y-1'>
             <label className='text-sm font-medium'>Overview *</label>
-            <RichTextEditor
-              value={overview}
-              onChange={setOverview}
-            />
+            <RichTextEditor value={overview} onChange={setOverview} />
           </div>
 
           <div className='space-y-4'>

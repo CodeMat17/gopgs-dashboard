@@ -15,11 +15,20 @@ type CourseProps = {
   course: string;
   duration: string;
   mode: string;
-  overview: string
-  whyChoose: { title: string; description: string}[]
+  overview: string;
+  faculty?: string;
+  whyChoose: { title: string; description: string }[];
 };
 
-const CourseCard = ({ id, course, duration, mode, overview, whyChoose }: CourseProps) => {
+const CourseCard = ({
+  id,
+  course,
+  duration,
+  mode,
+  overview,
+  whyChoose,
+  faculty,
+}: CourseProps) => {
   const [deleting, setDeleting] = useState(false);
 
   const deleteCourse = useMutation(api.courses.deleteCourse);
@@ -40,7 +49,11 @@ const CourseCard = ({ id, course, duration, mode, overview, whyChoose }: CourseP
   return (
     <Card className='p-6 bg-background dark:bg-neutral-900/30 dark:border-neutral-700 flex flex-col'>
       <div className='space-y-4'>
-        <p className='text-lg font-medium'>{course}</p>
+        <div>
+          <h3 className='text-muted-foreground'>{faculty}</h3>
+          <h2 className='text-xl font-medium'>{course}</h2>
+        </div>
+
         <div className='space-y-0.5'>
           <div className='flex items-center gap-2 text-sm'>
             <Calendar className='w-4 h-4 text-amber-500' /> {duration} Months
@@ -70,7 +83,15 @@ const CourseCard = ({ id, course, duration, mode, overview, whyChoose }: CourseP
           {deleting ? <Minus className='animate-spin' /> : "Delete"}
         </Button>
 
-        <UpdateCourse c_id={id} c_course={course} c_duration={duration} c_mode={mode} c_overview={overview} c_whyChoose={whyChoose} />
+        <UpdateCourse
+          c_id={id}
+          c_course={course}
+          c_duration={duration}
+          c_mode={mode}
+          c_overview={overview}
+          c_whyChoose={whyChoose}
+          c_faculty={faculty ?? ''}
+        />
       </div>
     </Card>
   );

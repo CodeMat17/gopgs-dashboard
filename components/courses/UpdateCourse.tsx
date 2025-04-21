@@ -33,6 +33,7 @@ type CourseProps = {
   c_mode: string;
   c_overview: string;
   c_whyChoose: { title: string; description: string }[];
+  c_faculty: string;
 };
 
 const durationOptions = ["12 Months", "18 Months", "24 Months"];
@@ -45,6 +46,7 @@ const UpdateCourse = ({
   c_mode,
   c_overview,
   c_whyChoose,
+  c_faculty,
 }: CourseProps) => {
   const updateCourse = useMutation(api.courses.updateCourse);
 
@@ -54,6 +56,7 @@ const UpdateCourse = ({
   const [mode, setMode] = useState(c_mode);
   const [overview, setOverview] = useState(c_overview);
   const [whyChoose, setWhyChoose] = useState(c_whyChoose);
+  const [faculty, setFaculty] = useState(c_faculty);
   const [open, setOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
 
@@ -65,8 +68,18 @@ const UpdateCourse = ({
       setMode(c_mode);
       setOverview(c_overview);
       setWhyChoose(c_whyChoose);
+      setFaculty(c_faculty);
     }
-  }, [open, c_id, c_course, c_duration, c_mode, c_overview, c_whyChoose]);
+  }, [
+    open,
+    c_id,
+    c_course,
+    c_duration,
+    c_mode,
+    c_overview,
+    c_whyChoose,
+    c_faculty,
+  ]);
 
   const handleWhyChooseChange = (
     index: number,
@@ -89,6 +102,46 @@ const UpdateCourse = ({
   const handleUpdate = async () => {
     setUpdating(true);
 
+    if (faculty === "") {
+      toast.warning("Warning!", {
+        description: "Faculty field cannot be empty.",
+      });
+      setUpdating(false);
+      return;
+    }
+
+    if (course === "") {
+      toast.warning("Warning!", {
+        description: "Course field cannot be empty.",
+      });
+      setUpdating(false);
+      return;
+    }
+
+    if (duration === "") {
+      toast.warning("Warning!", {
+        description: "Duration field cannot be empty.",
+      });
+      setUpdating(false);
+      return;
+    }
+
+    if (mode === "") {
+      toast.warning("Warning!", {
+        description: "Mode field cannot be empty.",
+      });
+      setUpdating(false);
+      return;
+    }
+
+    if (overview === "") {
+      toast.warning("Warning!", {
+        description: "Overview field cannot be empty.",
+      });
+      setUpdating(false);
+      return;
+    }
+
     try {
       await updateCourse({
         id,
@@ -97,9 +150,10 @@ const UpdateCourse = ({
         mode,
         overview,
         whyChoose,
+        faculty,
       });
       toast.success("Done!", { description: "Course updated successfully." });
-      setOpen(false)
+      setOpen(false);
     } catch (error) {
       toast.error("Error!", { description: `${error}` });
     } finally {
@@ -119,6 +173,15 @@ const UpdateCourse = ({
           <DialogTitle>Update Course Details</DialogTitle>
         </DialogHeader>
         <div className='space-y-4 overflow-y-auto flex-1 py-4'>
+          <div className='space-y-1'>
+            <label className='text-sm text-muted-foreground'>Faculty</label>
+            <Input
+              placeholder='Faculty'
+              value={faculty}
+              onChange={(e) => setFaculty(e.target.value)}
+            />
+          </div>
+
           <div className='space-y-1'>
             <label className='text-sm text-muted-foreground'>Course Name</label>
             <Input

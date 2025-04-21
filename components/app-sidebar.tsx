@@ -1,6 +1,6 @@
 'use client'
 
-import { BookOpen, Briefcase, GraduationCap, Home, ListChecks, Mail, Users, Newspaper } from "lucide-react";
+import { BookOpen, Briefcase, GraduationCap, Home, ListChecks, Mail, Users, Newspaper, FileText } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -49,6 +49,11 @@ const items = [
     title: "Alumni",
     url: "/alumni",
     icon: GraduationCap,
+  },
+  {
+    title: "How to apply",
+    url: "/how-to-apply",
+    icon: FileText,
   },
   {
     title: "Contact Us",

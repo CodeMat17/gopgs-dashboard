@@ -36,6 +36,7 @@ const MastersCourses = () => {
               mode={msc.mode}
               overview={msc.overview}
               whyChoose={msc.whyChoose}
+              faculty={msc.faculty ?? ''}
             />
           ))}
         </div>

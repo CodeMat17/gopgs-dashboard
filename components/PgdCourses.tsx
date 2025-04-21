@@ -35,6 +35,7 @@ const PgdCourses = () => {
               mode={pgd.mode}
               overview={pgd.overview}
               whyChoose={pgd.whyChoose}
+              faculty={pgd.faculty ?? ''}
             />
           ))}
         </div>

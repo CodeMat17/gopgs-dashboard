@@ -176,7 +176,13 @@ export default defineSchema({
         description: v.string(),
       })
     ),
+    faculty: v.optional(v.string()),
   })
     .index("by_slug", ["slug"])
     .index("by_type", ["type"]),
+
+  howToApply: defineTable({
+    text: v.string(),
+    link: v.string(),
+  }),
 });
