@@ -134,12 +134,15 @@ export default function FacultyCourseBrowser() {
                           <h4 className='font-medium text-base'>
                             {course.course}
                           </h4>
-                          <p className='text-sm text-muted-foreground flex items-center flex-wrap gap-2'>
+                          <p className='text-sm text-muted-foreground flex items-center'>
                             <span className='flex items-center'>
                               <Clock className='w-4 h-4 mr-1 text-amber-500' />
                               {course.duration}
                             </span>
-                            <span className='mx-1'>&middot;</span>
+                         
+                          </p>
+                          <p className='text-sm text-muted-foreground flex items-center'>
+                           
                             <span className='flex items-center'>
                               <BookOpen className='w-4 h-4 mr-1 text-amber-500' />
                               {course.mode}
@@ -164,7 +167,16 @@ export default function FacultyCourseBrowser() {
                             id={course._id}
                             course={course.course}
                           />
-                          <UpdateCourse c_id={course._id} c_course={course.course} c_duration={course.duration} c_mode={course.mode} c_overview={course.overview} c_whyChoose={course.whyChoose} c_faculty={course.faculty} c_type={course.type} />
+                          <UpdateCourse
+                            c_id={course._id}
+                            c_course={course.course}
+                            c_duration={course.duration}
+                            c_mode={course.mode}
+                            c_overview={course.overview}
+                            c_whyChoose={course.whyChoose}
+                            c_faculty={course.faculty}
+                            c_type={course.type}
+                          />
                         </div>
                       </motion.div>
                     ))
