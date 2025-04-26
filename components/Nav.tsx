@@ -18,11 +18,11 @@ export function Nav() {
       animate={{ y: 0 }}
       transition={{ duration: 0.5 }}
       className='sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60'>
-      <div className='flex h-[68px] items-center justify-between px-4 sm:px-6 lg:px-8'>
+      <div className='flex h-[68px] items-center justify-between px-3 sm:px-6 lg:px-8'>
         {/* Logo */}
         <Logo
           text_one='Godfrey Okoye University'
-          text_two='Postgraduate School'
+          text_two='School of Postgraduate Studies'
           classnames='sm:font-semibold'
           width={50}
           height={50}

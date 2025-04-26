@@ -26,6 +26,15 @@ import { RichTextEditor } from "../RichTextEditor";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 
+type Faculty =
+  | "Faculty of Arts"
+  | "Faculty of Education"
+  | "Faculty of Mgt. & Social Sciences"
+  | "Faculty of Nat. Science & Environmental Studies"
+  | "Faculty of Law";
+
+type CourseType = "pgd" | "masters" | "phd";
+
 type CourseProps = {
   c_id: Id<"courses">;
   c_course: string;
@@ -33,11 +42,20 @@ type CourseProps = {
   c_mode: string;
   c_overview: string;
   c_whyChoose: { title: string; description: string }[];
-  c_faculty: string;
+  c_faculty: Faculty;
+  c_type: CourseType;
 };
 
-const durationOptions = ["12 Months", "18 Months", "24 Months"];
-const modeOptions = ["On-line", "On-campus", "On-line & On-campus"];
+const durationOptions = ["12 Months", "18 Months", "24 Months"] as const;
+const modeOptions = ["On-line", "On-campus", "On-line & On-campus"] as const;
+const facultyOptions: Faculty[] = [
+  "Faculty of Arts",
+  "Faculty of Education",
+  "Faculty of Mgt. & Social Sciences",
+  "Faculty of Nat. Science & Environmental Studies",
+  "Faculty of Law",
+];
+const courseTypeOptions: CourseType[] = ["pgd", "masters", "phd"];
 
 const UpdateCourse = ({
   c_id,
@@ -47,111 +65,80 @@ const UpdateCourse = ({
   c_overview,
   c_whyChoose,
   c_faculty,
+  c_type,
 }: CourseProps) => {
   const updateCourse = useMutation(api.courses.updateCourse);
 
-  const [id, setId] = useState(c_id);
   const [course, setCourse] = useState(c_course);
   const [duration, setDuration] = useState(c_duration);
   const [mode, setMode] = useState(c_mode);
   const [overview, setOverview] = useState(c_overview);
   const [whyChoose, setWhyChoose] = useState(c_whyChoose);
-  const [faculty, setFaculty] = useState(c_faculty);
+  const [faculty, setFaculty] = useState<Faculty>(c_faculty);
+  const [type, setType] = useState<CourseType>(c_type);
   const [open, setOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setId(c_id);
       setCourse(c_course);
       setDuration(c_duration);
       setMode(c_mode);
       setOverview(c_overview);
       setWhyChoose(c_whyChoose);
       setFaculty(c_faculty);
+      setType(c_type);
     }
   }, [
     open,
-    c_id,
     c_course,
     c_duration,
     c_mode,
     c_overview,
     c_whyChoose,
     c_faculty,
+    c_type,
   ]);
 
   const handleWhyChooseChange = (
     index: number,
-    field: string,
+    field: "title" | "description",
     value: string
   ) => {
-    const updatedWhyChoose = [...whyChoose];
-    updatedWhyChoose[index] = { ...updatedWhyChoose[index], [field]: value };
-    setWhyChoose(updatedWhyChoose);
+    const updated = [...whyChoose];
+    updated[index] = { ...updated[index], [field]: value };
+    setWhyChoose(updated);
   };
 
   const addWhyChoose = () => {
-    setWhyChoose([...whyChoose, { title: "", description: "" }]);
+    setWhyChoose((prev) => [...prev, { title: "", description: "" }]);
   };
 
   const removeWhyChoose = (index: number) => {
-    setWhyChoose(whyChoose.filter((_, i) => i !== index));
+    setWhyChoose((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleUpdate = async () => {
     setUpdating(true);
 
-    if (faculty === "") {
-      toast.warning("Warning!", {
-        description: "Faculty field cannot be empty.",
-      });
-      setUpdating(false);
-      return;
-    }
-
-    if (course === "") {
-      toast.warning("Warning!", {
-        description: "Course field cannot be empty.",
-      });
-      setUpdating(false);
-      return;
-    }
-
-    if (duration === "") {
-      toast.warning("Warning!", {
-        description: "Duration field cannot be empty.",
-      });
-      setUpdating(false);
-      return;
-    }
-
-    if (mode === "") {
-      toast.warning("Warning!", {
-        description: "Mode field cannot be empty.",
-      });
-      setUpdating(false);
-      return;
-    }
-
-    if (overview === "") {
-      toast.warning("Warning!", {
-        description: "Overview field cannot be empty.",
-      });
+    if (!faculty || !type || !course || !duration || !mode || !overview) {
+      toast.warning("Warning!", { description: "All fields must be filled." });
       setUpdating(false);
       return;
     }
 
     try {
       await updateCourse({
-        id,
+        id: c_id,
         course,
         duration,
         mode,
         overview,
         whyChoose,
         faculty,
+        type,
       });
+
       toast.success("Done!", { description: "Course updated successfully." });
       setOpen(false);
     } catch (error) {
@@ -164,22 +151,56 @@ const UpdateCourse = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant='outline' className='w-full'>
-          Update
+        <Button variant='outline' className='w-full' disabled={updating}>
+          {updating ? (
+            <div className='flex items-center gap-2'>
+              <Minus className='animate-spin' size={16} /> Updating...
+            </div>
+          ) : (
+            "Update"
+          )}
         </Button>
       </DialogTrigger>
       <DialogContent className='max-w-2xl max-h-[calc(100vh-4rem)] flex flex-col'>
         <DialogHeader>
           <DialogTitle>Update Course Details</DialogTitle>
         </DialogHeader>
+
         <div className='space-y-4 overflow-y-auto flex-1 py-4'>
           <div className='space-y-1'>
             <label className='text-sm text-muted-foreground'>Faculty</label>
-            <Input
-              placeholder='Faculty'
+            <Select
               value={faculty}
-              onChange={(e) => setFaculty(e.target.value)}
-            />
+              onValueChange={(value) => setFaculty(value as Faculty)}>
+              <SelectTrigger>
+                <SelectValue placeholder='Select Faculty' />
+              </SelectTrigger>
+              <SelectContent>
+                {facultyOptions.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className='space-y-1'>
+            <label className='text-sm text-muted-foreground'>Course Type</label>
+            <Select
+              value={type}
+              onValueChange={(value) => setType(value as CourseType)}>
+              <SelectTrigger>
+                <SelectValue placeholder='Select Course Type' />
+              </SelectTrigger>
+              <SelectContent>
+                {courseTypeOptions.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className='space-y-1'>
@@ -196,7 +217,7 @@ const UpdateCourse = ({
               <label className='text-sm text-muted-foreground'>Duration</label>
               <Select value={duration} onValueChange={setDuration}>
                 <SelectTrigger>
-                  <SelectValue placeholder='Select duration' />
+                  <SelectValue placeholder='Select Duration' />
                 </SelectTrigger>
                 <SelectContent>
                   {durationOptions.map((option) => (
@@ -212,7 +233,7 @@ const UpdateCourse = ({
               <label className='text-sm text-muted-foreground'>Mode</label>
               <Select value={mode} onValueChange={setMode}>
                 <SelectTrigger>
-                  <SelectValue placeholder='Select mode' />
+                  <SelectValue placeholder='Select Mode' />
                 </SelectTrigger>
                 <SelectContent>
                   {modeOptions.map((option) => (
@@ -271,9 +292,10 @@ const UpdateCourse = ({
             </div>
           </div>
         </div>
+
         <DialogFooter className='sm:justify-end gap-2'>
           <DialogClose asChild>
-            <Button type='button' variant='secondary'>
+            <Button type='button' variant='secondary' disabled={updating}>
               Cancel
             </Button>
           </DialogClose>

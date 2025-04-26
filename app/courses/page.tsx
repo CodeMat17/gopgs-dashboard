@@ -1,21 +1,20 @@
 "use client";
 
-import MastersCourses from "@/components/MastersCourses";
-import PgdCourses from "@/components/PgdCourses";
-import PhdCourses from "@/components/PhdCourses";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AddCourse from "@/components/courses/AddCourse";
+import FacultyCourseBrowser from "@/components/courses/FacultyCourseBrower";
+
 
 export default function ProgramsPage() {
   return (
     <div className='w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-12'>
-      <h1 className='text-3xl sm:text-4xl font-bold mb-6'>Our Courses</h1>
+      <div className='mb-16 flex justify-between'>
+        <h1 className='text-3xl sm:text-4xl font-bold'>Our Courses</h1>
+        <AddCourse />
+      </div>
 
-      <p className='text-lg text-muted-foreground mb-8'>
-        Explore our diverse range of academic courses. Find the right course for
-        you.
-      </p>
+      <FacultyCourseBrowser />
 
-      <div className='w-full py-12'>
+      {/* <div className='w-full py-12'>
         <Tabs defaultValue='pgd'>
           <TabsList className='flex flex-col sm:flex-row gap-3 w-full'>
             <TabsTrigger
@@ -82,7 +81,7 @@ export default function ProgramsPage() {
             </div>
           </TabsContent>
         </Tabs>
-      </div>
+      </div> */}
     </div>
   );
 }

@@ -2,7 +2,13 @@ import { v } from "convex/values";
 import sanitizeHtml from "sanitize-html";
 import { generateSlug } from "../lib/slugUtils";
 import { mutation, query } from "./_generated/server";
-import { courseType } from "./schema";
+import { courseType, facultyType } from "./schema";
+import type { Infer } from "convex/values";
+
+type Faculty = Infer<typeof facultyType>;
+type CourseType = Infer<typeof courseType>
+
+
 
 export const getCoursesByType = query({
   args: { type: courseType },
@@ -11,6 +17,20 @@ export const getCoursesByType = query({
       .query("courses")
       .withIndex("by_type", (q) => q.eq("type", type))
       .collect();
+  },
+});
+
+export const getCoursesByFaculty = query({
+  args: {
+    faculty: facultyType,
+  },
+  handler: async (ctx, args) => {
+    const all = await ctx.db
+      .query("courses")
+      .withIndex("by_faculty", (q) => q.eq("faculty", args.faculty))
+      .collect();
+
+    return all;
   },
 });
 
@@ -30,7 +50,7 @@ export const addCourse = mutation({
     duration: v.string(),
     overview: v.string(),
     mode: v.string(),
-    faculty: v.string(),
+    faculty: facultyType,
     whyChoose: v.array(
       v.object({
         title: v.string(),
@@ -93,7 +113,8 @@ export const updateCourse = mutation({
     ),
     duration: v.optional(v.string()),
     mode: v.optional(v.string()),
-    faculty: v.optional(v.string())
+    faculty: facultyType,
+    type: courseType
   },
   handler: async (ctx, args) => {
     // Get existing course data
@@ -117,7 +138,8 @@ export const updateCourse = mutation({
       duration?: string;
       mode?: string;
       slug?: string;
-      faculty?: string,
+      faculty?: Faculty,
+      type?: CourseType
     } = {};
 
     // Only update provided fields
@@ -126,7 +148,8 @@ export const updateCourse = mutation({
     if (args.whyChoose !== undefined) updateData.whyChoose = args.whyChoose;
     if (args.duration !== undefined) updateData.duration = args.duration;
     if (args.mode !== undefined) updateData.mode = args.mode;
-     if (args.faculty !== undefined) updateData.faculty = args.faculty;
+    if (args.faculty !== undefined) updateData.faculty = args.faculty;
+      if (args.type !== undefined) updateData.type = args.type;
     if (slug !== existingCourse.slug) updateData.slug = slug;
 
     await ctx.db.patch(args.id, updateData);

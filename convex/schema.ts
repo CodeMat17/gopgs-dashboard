@@ -7,6 +7,20 @@ export const courseType = v.union(
   v.literal("phd")
 );
 
+// export const courseMode = v.union(
+//   v.literal("On-line"),
+//   v.literal("On-campus"),
+//   v.literal("On-line & On-campus")
+// );
+
+export const facultyType = v.union(
+  v.literal("Faculty of Arts"),
+  v.literal("Faculty of Education"),
+  v.literal("Faculty of Mgt. & Social Sciences"),
+  v.literal("Faculty of Nat. Science & Environmental Studies"),
+  v.literal("Faculty of Law")
+);
+
 export default defineSchema({
   hero: defineTable({
     title: v.string(),
@@ -176,10 +190,11 @@ export default defineSchema({
         description: v.string(),
       })
     ),
-    faculty: v.optional(v.string()),
+    faculty: facultyType,
   })
     .index("by_slug", ["slug"])
-    .index("by_type", ["type"]),
+    .index("by_type", ["type"])
+    .index("by_faculty", ["faculty"]),
 
   howToApply: defineTable({
     text: v.string(),
