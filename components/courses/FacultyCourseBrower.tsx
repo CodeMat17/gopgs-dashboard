@@ -96,7 +96,7 @@ export default function FacultyCourseBrowser() {
         </p>
       ) : (
         <motion.div
-          className='grid lg:grid-cols-3 gap-4'
+          className='grid xl:grid-cols-3 gap-4 xl:gap-3'
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4 }}>
