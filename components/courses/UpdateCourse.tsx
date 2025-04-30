@@ -69,7 +69,13 @@ interface WhyChooseItem {
   description: string;
 }
 
-const FileDownloadLink = ({ fileId }: { fileId: Id<"_storage"> }) => {
+const FileDownloadLink = ({
+  fileId,
+  title,
+}: {
+  fileId: Id<"_storage">;
+  title: string;
+}) => {
   const fileUrl = useQuery(api.courses.getFileUrl, { fileId });
 
   if (!fileUrl) return null;
@@ -77,7 +83,7 @@ const FileDownloadLink = ({ fileId }: { fileId: Id<"_storage"> }) => {
   return (
     <a
       href={fileUrl}
-      download
+      download={`${title}.pdf`}
       className='text-blue-600 hover:underline text-sm block'>
       Download PDF
     </a>
@@ -324,7 +330,7 @@ const UpdateCourse = ({
                     updateItemField(setMaterials, idx, "title", e.target.value)
                   }
                 />
-                <FileDownloadLink fileId={mat.file} />
+                <FileDownloadLink fileId={mat.file} title={mat.title} />
                 <Button
                   variant='destructive'
                   size='sm'
