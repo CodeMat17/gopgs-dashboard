@@ -61,7 +61,7 @@ const facultyOptions: Faculty[] = [
 ];
 const courseTypeOptions: CourseType[] = ["pgd", "masters", "phd"];
 
-const durationOptions = ["12 Months", "18 Months", "24 Months"] as const;
+const durationOptions = ["12 Months", "18 Months", "24 Months", "30 Months", "36 Months",] as const;
 const modeOptions = ["On-line", "On-campus", "On-line & On-campus"] as const;
 
 interface WhyChooseItem {

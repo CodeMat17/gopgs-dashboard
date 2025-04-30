@@ -46,7 +46,13 @@ const facultyOptions: Faculty[] = [
 
 const modeOptions = ["On-line", "On-campus", "On-line & On-campus"];
 const typeOptions: CourseType[] = ["pgd", "masters", "phd"];
-const durationOptions = ["12 Months", "18 Months", "24 Months"];
+const durationOptions = [
+  "12 Months",
+  "18 Months",
+  "24 Months",
+  "30 Months",
+  "36 Months",
+];
 
 export default function AddCourseModal() {
   const [open, setOpen] = useState(false);
