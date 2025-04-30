@@ -335,7 +335,9 @@ const UpdateCourse = ({
                   variant='destructive'
                   size='sm'
                   onClick={() =>
-                    setMaterials((prev) => prev.filter((_, i) => i !== idx))
+                    setMaterials((prev) =>
+                      prev.filter((m) => m.file !== mat.file)
+                    )
                   }>
                   Remove
                 </Button>
