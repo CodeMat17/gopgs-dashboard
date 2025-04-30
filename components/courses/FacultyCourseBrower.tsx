@@ -139,17 +139,15 @@ export default function FacultyCourseBrowser() {
                               <Clock className='w-4 h-4 mr-1 text-amber-500' />
                               {course.duration}
                             </span>
-                         
                           </p>
                           <p className='text-sm text-muted-foreground flex items-center'>
-                           
                             <span className='flex items-center'>
                               <BookOpen className='w-4 h-4 mr-1 text-amber-500' />
                               {course.mode}
                             </span>
                           </p>
                         </div>
-                        {/* <Link href={`/courses/${course.slug}`} passHref>
+                       {/* <Link href={`/courses/${course.slug}`} passHref>
                           <motion.div
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -176,7 +174,9 @@ export default function FacultyCourseBrowser() {
                             c_whyChoose={course.whyChoose}
                             c_faculty={course.faculty}
                             c_type={course.type}
+                            c_courseMaterials={course.courseMaterials ?? []}
                           />
+                   
                         </div>
                       </motion.div>
                     ))

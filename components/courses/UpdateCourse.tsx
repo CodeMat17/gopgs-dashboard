@@ -1,15 +1,6 @@
 "use client";
 
 import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -18,13 +9,39 @@ import {
 } from "@/components/ui/select";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useMutation } from "convex/react";
-import { Minus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useMutation, useQuery } from "convex/react";
+import { Loader2 } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { RichTextEditor } from "../RichTextEditor";
 import { Button } from "../ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "../ui/dialog";
 import { Input } from "../ui/input";
+
+interface CourseMaterial {
+  title: string;
+  file: Id<"_storage">;
+}
+
+interface UpdateCourseProps {
+  c_id: Id<"courses">;
+  c_course: string;
+  c_duration: string;
+  c_mode: string;
+  c_overview: string;
+  c_whyChoose: WhyChooseItem[];
+  c_faculty: Faculty;
+  c_type: CourseType;
+  c_courseMaterials: CourseMaterial[];
+}
 
 type Faculty =
   | "Faculty of Arts"
@@ -35,19 +52,6 @@ type Faculty =
 
 type CourseType = "pgd" | "masters" | "phd";
 
-type CourseProps = {
-  c_id: Id<"courses">;
-  c_course: string;
-  c_duration: string;
-  c_mode: string;
-  c_overview: string;
-  c_whyChoose: { title: string; description: string }[];
-  c_faculty: Faculty;
-  c_type: CourseType;
-};
-
-const durationOptions = ["12 Months", "18 Months", "24 Months"] as const;
-const modeOptions = ["On-line", "On-campus", "On-line & On-campus"] as const;
 const facultyOptions: Faculty[] = [
   "Faculty of Arts",
   "Faculty of Education",
@@ -56,6 +60,29 @@ const facultyOptions: Faculty[] = [
   "Faculty of Law",
 ];
 const courseTypeOptions: CourseType[] = ["pgd", "masters", "phd"];
+
+const durationOptions = ["12 Months", "18 Months", "24 Months"] as const;
+const modeOptions = ["On-line", "On-campus", "On-line & On-campus"] as const;
+
+interface WhyChooseItem {
+  title: string;
+  description: string;
+}
+
+const FileDownloadLink = ({ fileId }: { fileId: Id<"_storage"> }) => {
+  const fileUrl = useQuery(api.courses.getFileUrl, { fileId });
+
+  if (!fileUrl) return null;
+
+  return (
+    <a
+      href={fileUrl}
+      download
+      className='text-blue-600 hover:underline text-sm block'>
+      Download PDF
+    </a>
+  );
+};
 
 const UpdateCourse = ({
   c_id,
@@ -66,9 +93,20 @@ const UpdateCourse = ({
   c_whyChoose,
   c_faculty,
   c_type,
-}: CourseProps) => {
-  const updateCourse = useMutation(api.courses.updateCourse);
+  c_courseMaterials,
+}: UpdateCourseProps) => {
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [fileLoading, setFileLoading] = useState(false);
+  const [newMaterial, setNewMaterial] = useState<{
+    title: string;
+    file?: File;
+  }>({ title: "" });
 
+  const updateCourse = useMutation(api.courses.updateCourse);
+  const generateUploadUrl = useMutation(api.courses.generateUploadUrl);
+
+  // State management
   const [course, setCourse] = useState(c_course);
   const [duration, setDuration] = useState(c_duration);
   const [mode, setMode] = useState(c_mode);
@@ -76,57 +114,51 @@ const UpdateCourse = ({
   const [whyChoose, setWhyChoose] = useState(c_whyChoose);
   const [faculty, setFaculty] = useState<Faculty>(c_faculty);
   const [type, setType] = useState<CourseType>(c_type);
-  const [open, setOpen] = useState(false);
-  const [updating, setUpdating] = useState(false);
+  const [materials, setMaterials] = useState(c_courseMaterials);
 
-  useEffect(() => {
-    if (open) {
-      setCourse(c_course);
-      setDuration(c_duration);
-      setMode(c_mode);
-      setOverview(c_overview);
-      setWhyChoose(c_whyChoose);
-      setFaculty(c_faculty);
-      setType(c_type);
+  const handleAddMaterial = async () => {
+    if (!newMaterial.title.trim() || !newMaterial.file) return;
+
+    try {
+      setFileLoading(true);
+      const postUrl = await generateUploadUrl();
+      const result = await fetch(postUrl, {
+        method: "POST",
+        headers: { "Content-Type": newMaterial.file.type },
+        body: newMaterial.file,
+      });
+      const { storageId } = await result.json();
+
+      setMaterials((prev) => [
+        ...prev,
+        {
+          title: newMaterial.title.trim(),
+          file: storageId as Id<"_storage">,
+        },
+      ]);
+      setNewMaterial({ title: "", file: undefined });
+    } catch (error) {
+      console.error("Upload failed:", error);
+      toast.error("Upload failed", {
+        description: "Failed to upload PDF file",
+      });
+    } finally {
+      setFileLoading(false);
     }
-  }, [
-    open,
-    c_course,
-    c_duration,
-    c_mode,
-    c_overview,
-    c_whyChoose,
-    c_faculty,
-    c_type,
-  ]);
+  };
 
-  const handleWhyChooseChange = (
+  const updateItemField = <T extends object, K extends keyof T>(
+    setItems: React.Dispatch<React.SetStateAction<T[]>>,
     index: number,
-    field: "title" | "description",
-    value: string
-  ) => {
-    const updated = [...whyChoose];
-    updated[index] = { ...updated[index], [field]: value };
-    setWhyChoose(updated);
-  };
+    field: K,
+    value: T[K]
+  ) =>
+    setItems((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
 
-  const addWhyChoose = () => {
-    setWhyChoose((prev) => [...prev, { title: "", description: "" }]);
-  };
-
-  const removeWhyChoose = (index: number) => {
-    setWhyChoose((prev) => prev.filter((_, i) => i !== index));
-  };
-
-  const handleUpdate = async () => {
-    setUpdating(true);
-
-    if (!faculty || !type || !course || !duration || !mode || !overview) {
-      toast.warning("Warning!", { description: "All fields must be filled." });
-      setUpdating(false);
-      return;
-    }
-
+  const handleSave = async () => {
+    setLoading(true);
     try {
       await updateCourse({
         id: c_id,
@@ -137,170 +169,214 @@ const UpdateCourse = ({
         whyChoose,
         faculty,
         type,
+        courseMaterials: materials,
       });
-
-      toast.success("Done!", { description: "Course updated successfully." });
       setOpen(false);
+      toast.success("Course updated successfully");
     } catch (error) {
-      toast.error("Error!", { description: `${error}` });
+      console.error("Update failed:", error);
+      toast.error("Update failed", { description: "Failed to update course" });
     } finally {
-      setUpdating(false);
+      setLoading(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant='outline' className='w-full' disabled={updating}>
-          {updating ? (
-            <div className='flex items-center gap-2'>
-              <Minus className='animate-spin' size={16} /> Updating...
-            </div>
-          ) : (
-            "Update"
-          )}
+        <Button variant='outline' className='w-full'>
+          Update Course
         </Button>
       </DialogTrigger>
-      <DialogContent className='max-w-2xl max-h-[calc(100vh-4rem)] flex flex-col'>
+      <DialogContent className='max-w-2xl max-h-[calc(100vh-4rem)] overflow-y-auto'>
         <DialogHeader>
           <DialogTitle>Update Course Details</DialogTitle>
         </DialogHeader>
 
-        <div className='space-y-4 overflow-y-auto flex-1 py-4'>
-          <div className='space-y-1'>
-            <label className='text-sm text-muted-foreground'>Faculty</label>
-            <Select
-              value={faculty}
-              onValueChange={(value) => setFaculty(value as Faculty)}>
-              <SelectTrigger>
-                <SelectValue placeholder='Select Faculty' />
-              </SelectTrigger>
-              <SelectContent>
-                {facultyOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+        <div className='space-y-6 py-4'>
+          {/* Faculty Selector */}
+          <Select
+            value={faculty}
+            onValueChange={(v) => setFaculty(v as Faculty)}>
+            <SelectTrigger>
+              <SelectValue placeholder='Select Faculty' />
+            </SelectTrigger>
+            <SelectContent>
+              {facultyOptions.map((fac) => (
+                <SelectItem key={fac} value={fac}>
+                  {fac}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          <div className='space-y-1'>
-            <label className='text-sm text-muted-foreground'>Course Type</label>
-            <Select
-              value={type}
-              onValueChange={(value) => setType(value as CourseType)}>
-              <SelectTrigger>
-                <SelectValue placeholder='Select Course Type' />
-              </SelectTrigger>
-              <SelectContent>
-                {courseTypeOptions.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option.toUpperCase()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Course Type Selector */}
+          <Select value={type} onValueChange={(v) => setType(v as CourseType)}>
+            <SelectTrigger>
+              <SelectValue placeholder='Select Course Type' />
+            </SelectTrigger>
+            <SelectContent>
+              {courseTypeOptions.map((ct) => (
+                <SelectItem key={ct} value={ct}>
+                  {ct.toUpperCase()}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          <div className='space-y-1'>
-            <label className='text-sm text-muted-foreground'>Course Name</label>
-            <Input
-              placeholder='Course name'
-              value={course}
-              onChange={(e) => setCourse(e.target.value)}
-            />
-          </div>
+          {/* Course Name */}
+          <Input
+            value={course}
+            onChange={(e) => setCourse(e.target.value)}
+            placeholder='Course Name'
+          />
 
-          <div className='grid grid-cols-2 gap-4'>
-            <div className='space-y-1'>
-              <label className='text-sm text-muted-foreground'>Duration</label>
-              <Select value={duration} onValueChange={setDuration}>
-                <SelectTrigger>
-                  <SelectValue placeholder='Select Duration' />
-                </SelectTrigger>
-                <SelectContent>
-                  {durationOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Duration Selector */}
+          <Select value={duration} onValueChange={setDuration}>
+            <SelectTrigger>
+              <SelectValue placeholder='Select Duration' />
+            </SelectTrigger>
+            <SelectContent>
+              {durationOptions.map((dur) => (
+                <SelectItem key={dur} value={dur}>
+                  {dur}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            <div className='space-y-1'>
-              <label className='text-sm text-muted-foreground'>Mode</label>
-              <Select value={mode} onValueChange={setMode}>
-                <SelectTrigger>
-                  <SelectValue placeholder='Select Mode' />
-                </SelectTrigger>
-                <SelectContent>
-                  {modeOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          {/* Mode Selector */}
+          <Select value={mode} onValueChange={setMode}>
+            <SelectTrigger>
+              <SelectValue placeholder='Select Mode' />
+            </SelectTrigger>
+            <SelectContent>
+              {modeOptions.map((m) => (
+                <SelectItem key={m} value={m}>
+                  {m}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-          <div className='space-y-1'>
-            <label className='text-sm text-muted-foreground'>Overview</label>
-            <RichTextEditor value={overview} onChange={setOverview} />
-          </div>
+          {/* Overview Editor */}
+          <RichTextEditor value={overview} onChange={setOverview} />
 
-          <div className='space-y-4'>
-            <label className='text-sm text-muted-foreground'>
+          {/* Why Choose Section */}
+          <div className='space-y-2'>
+            <label className='text-sm font-medium'>
               Why Choose This Course
             </label>
-
-            {whyChoose.map((item, index) => (
-              <div key={index} className='space-y-2 border p-4 rounded-lg'>
+            {whyChoose.map((item, idx) => (
+              <div key={idx} className='p-3 border rounded-md space-y-2'>
                 <Input
-                  placeholder='Title'
                   value={item.title}
+                  placeholder='Reason Title'
                   onChange={(e) =>
-                    handleWhyChooseChange(index, "title", e.target.value)
+                    updateItemField(setWhyChoose, idx, "title", e.target.value)
                   }
                 />
                 <Input
-                  placeholder='Description'
                   value={item.description}
+                  placeholder='Reason Description'
                   onChange={(e) =>
-                    handleWhyChooseChange(index, "description", e.target.value)
+                    updateItemField(
+                      setWhyChoose,
+                      idx,
+                      "description",
+                      e.target.value
+                    )
                   }
                 />
                 <Button
                   variant='destructive'
                   size='sm'
-                  className='mt-2'
-                  onClick={() => removeWhyChoose(index)}>
+                  onClick={() =>
+                    setWhyChoose((prev) => prev.filter((_, i) => i !== idx))
+                  }>
                   Remove
                 </Button>
               </div>
             ))}
-            <div>
+            <Button
+              variant='outline'
+              size='sm'
+              onClick={() =>
+                setWhyChoose((prev) => [
+                  ...prev,
+                  { title: "", description: "" },
+                ])
+              }>
+              Add Reason
+            </Button>
+          </div>
+
+          {/* Course Materials Section */}
+          <div className='space-y-2'>
+            <label className='text-sm font-medium'>Course Materials</label>
+
+            {materials.map((mat, idx) => (
+              <div key={mat.file} className='p-3 border rounded-md space-y-2'>
+                <Input
+                  value={mat.title}
+                  placeholder='Material Title'
+                  onChange={(e) =>
+                    updateItemField(setMaterials, idx, "title", e.target.value)
+                  }
+                />
+                <FileDownloadLink fileId={mat.file} />
+                <Button
+                  variant='destructive'
+                  size='sm'
+                  onClick={() =>
+                    setMaterials((prev) => prev.filter((_, i) => i !== idx))
+                  }>
+                  Remove
+                </Button>
+              </div>
+            ))}
+
+            <div className='space-y-2'>
+              <Input
+                value={newMaterial.title}
+                placeholder='New Material Title'
+                onChange={(e) =>
+                  setNewMaterial((prev) => ({ ...prev, title: e.target.value }))
+                }
+              />
+              <Input
+                type='file'
+                accept='application/pdf'
+                onChange={(e) =>
+                  setNewMaterial((prev) => ({
+                    ...prev,
+                    file: e.target.files?.[0],
+                  }))
+                }
+              />
               <Button
-                type='button'
-                variant='outline'
-                size='sm'
-                onClick={addWhyChoose}>
-                Add Reason
+                onClick={handleAddMaterial}
+                disabled={
+                  !newMaterial.title || !newMaterial.file || fileLoading
+                }>
+                {fileLoading ? (
+                  <Loader2 className='animate-spin' />
+                ) : (
+                  "Add Material"
+                )}
               </Button>
             </div>
           </div>
         </div>
 
-        <DialogFooter className='sm:justify-end gap-2'>
+        <DialogFooter className='gap-2'>
           <DialogClose asChild>
-            <Button type='button' variant='secondary' disabled={updating}>
+            <Button variant='secondary' disabled={loading}>
               Cancel
             </Button>
           </DialogClose>
-          <Button type='button' disabled={updating} onClick={handleUpdate}>
-            {updating ? <Minus className='animate-spin' /> : "Update"}
+          <Button onClick={handleSave} disabled={loading}>
+            {loading ? <Loader2 className='animate-spin' /> : "Update Course"}
           </Button>
         </DialogFooter>
       </DialogContent>
