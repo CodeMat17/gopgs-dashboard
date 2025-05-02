@@ -14,8 +14,6 @@ import { useQuery } from "convex/react";
 import { motion } from "framer-motion";
 import { BookOpen, Clock } from "lucide-react";
 import { useState } from "react";
-import { DeleteCourse } from "./DeleteCourse";
-import UpdateCourse from "./UpdateCourse";
 
 const faculties = [
   "Faculty of Arts",
@@ -160,24 +158,7 @@ export default function FacultyCourseBrowser() {
                             </Button>
                           </motion.div>
                         </Link> */}
-                        <div className='mt-auto pt-6 flex gap-2 lg:gap-4'>
-                          <DeleteCourse
-                            id={course._id}
-                            course={course.course}
-                          />
-                          <UpdateCourse
-                            c_id={course._id}
-                            c_course={course.course}
-                            c_duration={course.duration}
-                            c_mode={course.mode}
-                            c_overview={course.overview}
-                            c_whyChoose={course.whyChoose}
-                            c_faculty={course.faculty}
-                            c_type={course.type}
-                            c_courseMaterials={course.courseMaterials ?? []}
-                          />
-                   
-                        </div>
+                      
                       </motion.div>
                     ))
                   )}
