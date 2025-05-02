@@ -9,6 +9,21 @@ export const getAll = query({
   },
 });
 
+export const getMaterialsByFacultyType = query({
+  args: {
+    faculty: facultyType,
+    type: courseType,
+  },
+  handler: async ({ db }, args) => {
+    return await db
+      .query("materials")
+      .withIndex("by_faculty_type", (q) =>
+        q.eq("faculty", args.faculty).eq("type", args.type)
+      )
+      .collect();
+  },
+});
+
 export const addMaterial = mutation({
   args: {
     faculty: facultyType,

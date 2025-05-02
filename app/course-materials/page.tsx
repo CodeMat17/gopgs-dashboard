@@ -61,9 +61,16 @@ export default function UploadMaterial() {
                     Download PDF
                   </Button>
                 </div>
-                <div className="pt-4 flex justify-end gap-4">
-                        <DeleteCourse id={material._id} course={material.title} />
-                        <UpdateCourse c_id={material._id} c_faculty={material.faculty} c_type={material.type} c_title={material.title} c_description={material.description} c_fileId={material.file} />
+                <div className='pt-4 flex justify-end gap-4'>
+                  <DeleteCourse id={material._id} course={material.title} />
+                  <UpdateCourse
+                    c_id={material._id}
+                    c_faculty={material.faculty}
+                    c_type={material.type}
+                    c_title={material.title}
+                    c_description={material.description}
+                    c_fileId={material.file}
+                  />
                 </div>
               </div>
             ))}

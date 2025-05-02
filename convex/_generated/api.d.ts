@@ -28,6 +28,7 @@ import type * as news from "../news.js";
 import type * as programs from "../programs.js";
 import type * as requirements from "../requirements.js";
 import type * as staff from "../staff.js";
+import type * as students from "../students.js";
 import type * as vision from "../vision.js";
 
 /**
@@ -54,6 +55,7 @@ declare const fullApi: ApiFromModules<{
   programs: typeof programs;
   requirements: typeof requirements;
   staff: typeof staff;
+  students: typeof students;
   vision: typeof vision;
 }>;
 export declare const api: FilterApi<

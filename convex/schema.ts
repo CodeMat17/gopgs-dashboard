@@ -2,7 +2,6 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export const courseType = v.union(
-  v.literal("gpc"), // Make sure this is included
   v.literal("pgd"),
   v.literal("masters"),
   v.literal("phd")
@@ -186,7 +185,6 @@ export default defineSchema({
       })
     ),
     faculty: facultyType,
-    pdfId: v.optional(v.string()),
     courseMaterials: v.optional(
       v.array(v.object({ title: v.string(), file: v.id("_storage") }))
     ),

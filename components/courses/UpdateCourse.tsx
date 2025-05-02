@@ -33,7 +33,7 @@ const validFaculties = [
   "Faculty of Law",
 ] as const;
 
-const validCourseLevels = ["gpc", "pgd", "masters", "phd"] as const;
+const validCourseLevels = ["pgd", "masters", "phd"] as const;
 
 type Faculty = (typeof validFaculties)[number];
 type CourseLevel = (typeof validCourseLevels)[number];
