@@ -31,24 +31,6 @@ export default defineSchema({
     desc: v.string(),
   }),
 
-  programs: defineTable({
-    programFullName: v.optional(v.string()),
-    programShortName: v.string(),
-    programOverview: v.string(),
-    whyChoose: v.array(
-      v.object({
-        title: v.string(), // e.g., "Cutting-Edge Facilities"
-        description: v.string(), // e.g., "Access to state-of-the-art labs and research equipment"
-      })
-    ),
-    nextIntake: v.string(),
-    studyDuration: v.string(),
-    deliveryMode: v.string(),
-    studyMode: v.string(),
-    slug: v.string(),
-    status: v.boolean(),
-  }).index("by_slug", ["slug"]),
-
   alumni: defineTable({
     name: v.string(),
     photo: v.optional(v.string()),
@@ -185,11 +167,29 @@ export default defineSchema({
       })
     ),
     faculty: facultyType,
-   
   })
     .index("by_slug", ["slug"])
     .index("by_type", ["type"])
-    .index("by_faculty", ["faculty"]),
+    .index("by_faculty", ["faculty"])
+    .index("by_faculty_type", ["faculty", "type"]),
+
+  programs: defineTable({
+    programFullName: v.optional(v.string()),
+    programShortName: v.string(),
+    programOverview: v.string(),
+    whyChoose: v.array(
+      v.object({
+        title: v.string(),
+        description: v.string(),
+      })
+    ),
+    nextIntake: v.string(),
+    studyDuration: v.string(),
+    deliveryMode: v.string(),
+    studyMode: v.string(),
+    slug: v.string(),
+    status: v.boolean(),
+  }).index("by_slug", ["slug"]),
 
   howToApply: defineTable({
     text: v.string(),
