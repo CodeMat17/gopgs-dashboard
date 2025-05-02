@@ -185,9 +185,7 @@ export default defineSchema({
       })
     ),
     faculty: facultyType,
-    courseMaterials: v.optional(
-      v.array(v.object({ title: v.string(), file: v.id("_storage") }))
-    ),
+   
   })
     .index("by_slug", ["slug"])
     .index("by_type", ["type"])

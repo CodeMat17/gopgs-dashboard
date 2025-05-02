@@ -133,24 +133,6 @@ export const updateCourse = mutation({
       slug = generateSlug(args.course);
     }
 
-    // await ctx.db.patch(args.id, {
-    //   ...(args.course && { course: args.course }),
-    //   ...(args.overview && { overview: args.overview }),
-    //   ...(args.whyChoose && {
-    //     whyChoose: (existingCourse.whyChoose ?? []).concat(args.whyChoose),
-    //   }),
-    //   ...(args.duration && { duration: args.duration }),
-    //   ...(args.mode && { mode: args.mode }),
-    //   ...(args.faculty && { faculty: args.faculty }),
-    //   ...(args.type && { type: args.type }),
-    //   ...(args.courseMaterials && {
-    //     courseMaterials: (existingCourse.courseMaterials ?? []).concat(
-    //       args.courseMaterials
-    //     ),
-    //   }),
-    //   slug,
-    // });
-
     // Prepare data to update
     const updateData: {
       course?: string;
