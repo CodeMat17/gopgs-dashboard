@@ -2,16 +2,11 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 export const courseType = v.union(
+  v.literal("gpc"), // Make sure this is included
   v.literal("pgd"),
   v.literal("masters"),
   v.literal("phd")
 );
-
-// export const courseMode = v.union(
-//   v.literal("On-line"),
-//   v.literal("On-campus"),
-//   v.literal("On-line & On-campus")
-// );
 
 export const facultyType = v.union(
   v.literal("Faculty of Arts"),
@@ -192,7 +187,9 @@ export default defineSchema({
     ),
     faculty: facultyType,
     pdfId: v.optional(v.string()),
-    courseMaterials: v.optional(v.array(v.object({title: v.string(), file: v.id("_storage")})))
+    courseMaterials: v.optional(
+      v.array(v.object({ title: v.string(), file: v.id("_storage") }))
+    ),
   })
     .index("by_slug", ["slug"])
     .index("by_type", ["type"])
@@ -202,4 +199,21 @@ export default defineSchema({
     text: v.string(),
     link: v.string(),
   }),
+
+  students: defineTable({
+    name: v.string(),
+    email: v.string(),
+    phone: v.string(),
+    regno: v.string(),
+    faculty: facultyType,
+    type: courseType,
+  }).index("by_regno", ["regno"]),
+
+  materials: defineTable({
+    faculty: facultyType,
+    type: courseType,
+    title: v.string(),
+    description: v.string(),
+    file: v.id("_storage"),
+  }).index("by_faculty_type", ["faculty", "type"]),
 });

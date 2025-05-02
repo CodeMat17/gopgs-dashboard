@@ -11,7 +11,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -21,180 +20,110 @@ import {
 } from "@/components/ui/select";
 import { api } from "@/convex/_generated/api";
 import { useMutation } from "convex/react";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
-import sanitizeHtml from "sanitize-html";
 import { toast } from "sonner";
-import { RichTextEditor } from "../RichTextEditor";
 
-type Faculty =
-  | "Faculty of Arts"
-  | "Faculty of Education"
-  | "Faculty of Mgt. & Social Sciences"
-  | "Faculty of Nat. Science & Environmental Studies"
-  | "Faculty of Law";
-
-type CourseType = "pgd" | "masters" | "phd";
-
-const facultyOptions: Faculty[] = [
+const validFaculties = [
   "Faculty of Arts",
   "Faculty of Education",
   "Faculty of Mgt. & Social Sciences",
   "Faculty of Nat. Science & Environmental Studies",
   "Faculty of Law",
-];
+] as const;
 
-const modeOptions = ["On-line", "On-campus", "On-line & On-campus"];
-const typeOptions: CourseType[] = ["pgd", "masters", "phd"];
-const durationOptions = [
-  "12 Months",
-  "18 Months",
-  "24 Months",
-  "30 Months",
-  "36 Months",
-];
+const validCourseLevels = ["gpc", "pgd", "masters", "phd"] as const;
+type Faculty = (typeof validFaculties)[number];
+type CourseLevel = (typeof validCourseLevels)[number];
 
 export default function AddCourseModal() {
   const [open, setOpen] = useState(false);
-  const [course, setCourse] = useState("");
-  const [duration, setDuration] = useState("");
-  const [overview, setOverview] = useState("");
-  const [mode, setMode] = useState("");
-  const [faculty, setFaculty] = useState<Faculty | "">("");
-  const [type, setType] = useState<CourseType | "">("");
-  const [whyChoose, setWhyChoose] = useState<
-    { title: string; description: string }[]
-  >([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [faculty, setFaculty] = useState<Faculty>();
+  const [type, setType] = useState<CourseLevel>();
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const addCourse = useMutation(api.courses.addCourse);
-
-  const handleWhyChooseChange = (
-    index: number,
-    field: "title" | "description",
-    value: string
-  ) => {
-    const updated = [...whyChoose];
-    updated[index][field] = value;
-    setWhyChoose(updated);
-  };
-
-  const addWhyChoose = () => {
-    setWhyChoose([...whyChoose, { title: "", description: "" }]);
-  };
-
-  const removeWhyChoose = (index: number) => {
-    setWhyChoose(whyChoose.filter((_, i) => i !== index));
-  };
+  const generateUploadUrl = useMutation(api.materials.generateUploadUrl);
+  const addMaterial = useMutation(api.materials.addMaterial);
 
   const handleSubmit = async () => {
-    const cleanOverview = sanitizeHtml(overview, {
-      allowedTags: [
-        "p",
-        "strong",
-        "em",
-        "u",
-        "h1",
-        "h2",
-        "h3",
-        "ul",
-        "ol",
-        "li",
-        "a",
-      ],
-      allowedAttributes: { a: ["href", "target", "rel"] },
-    });
+    setError("");
 
-    
-
-    if (!course) {
-      toast.warning("Error!", {
-        description: "Course name field cannot be empty",
-      });
+    if (!faculty) {
+      setError("Please select faculty");
+      toast.error("Error!", { description: "Please select faculty" });
       return;
     }
 
-     if (!faculty) {
-       toast.warning("Error!", {
-         description: "Faculty field cannot be empty",
-       });
-       return;
-     }
-
-     if (!type) {
-       toast.warning("Error!", {
-         description: "Course type field cannot be empty",
-       });
-       return;
-     }
-
-    if (!duration) {
-      toast.warning("Error!", {
-        description: "Duration field cannot be empty",
-      });
+    if (!type) {
+      setError("Please select program type");
+      toast.error("Error!", { description: "Please select program type" });
       return;
     }
 
-    if (!mode) {
-      toast.warning("Error!", {
-        description: "Mode field cannot be empty",
-      });
+    if (!title) {
+      setError("Please add course title");
+      toast.error("Error!", { description: "Please add course title" });
       return;
     }
 
-   
-
-    if (!overview) {
-      toast.warning("Error!", {
-        description: "Overview field cannot be empty",
-      });
+    if (!description) {
+      setError("Please please add course description");
+      toast.error("Error!", { description: "Please add course description" });
       return;
     }
 
-    const validWhyChoose = whyChoose.filter(
-      (item) => item.title && item.description
-    );
-    if (validWhyChoose.length === 0) {
-      toast.error("Please add at least one 'Why Choose' reason");
+    if (!file) {
+      setError("Please select a PDF file");
+      toast.error("Error!", { description: "Please select a PDF file" });
       return;
     }
 
-    if (!whyChoose) {
-      toast.warning("Error!", {
-        description: "WhyChoose field cannot be empty",
-      });
+    if (file.type !== "application/pdf") {
+      setError("Only PDF files are allowed");
+      toast.error("Error!", { description: "Only PDF files are allowed" });
       return;
     }
 
-    setIsSubmitting(true);
     try {
-      await addCourse({
-        course,
-        duration,
-        overview: cleanOverview,
-        mode,
-        faculty: faculty as Faculty,
-        type: type as CourseType,
-        slug: course.toLowerCase().replace(/\s+/g, "-"),
-        whyChoose: validWhyChoose,
+      setIsLoading(true);
+
+      const postUrl = await generateUploadUrl();
+      const result = await fetch(postUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
       });
 
-      toast.success("Course added successfully");
-      setOpen(false);
-      setCourse("");
-      setDuration("");
-      setOverview("");
-      setMode("");
-      setFaculty("");
-      setType("");
-      setWhyChoose([]);
-    } catch (error) {
-      console.error("Failed to add course:", error);
-      toast.error("Failed to add course", {
-        description: error instanceof Error ? error.message : "Unknown error",
+      const { storageId } = await result.json();
+
+      await addMaterial({
+        faculty,
+        type,
+        title,
+        description,
+        storageId,
       });
+
+      toast("Done!", {
+        description: "Material has been uploaded successfully",
+      });
+
+      // Reset form
+      setFaculty(undefined);
+      setType(undefined);
+      setTitle("");
+      setDescription("");
+      setFile(null);
+      setOpen(false);
+    } catch (err) {
+      console.log("Error Msg: ", err);
+      setError("Failed to upload material. Please try again.");
     } finally {
-      setIsSubmitting(false);
+      setIsLoading(false);
     }
   };
 
@@ -209,122 +138,78 @@ export default function AddCourseModal() {
         </DialogHeader>
 
         <div className='space-y-4 overflow-y-auto flex-1 py-4'>
-          <div>
-            <Label>Course Name</Label>
-            <Input value={course} onChange={(e) => setCourse(e.target.value)} />
-          </div>
-
-          <div>
-            <Label>Faculty</Label>
-            <Select
-              value={faculty}
-              onValueChange={(val) => setFaculty(val as Faculty)}>
-              <SelectTrigger>
-                <SelectValue placeholder='Select faculty' />
-              </SelectTrigger>
-              <SelectContent>
-                {facultyOptions.map((f) => (
-                  <SelectItem key={f} value={f}>
-                    {f}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label>Course Type</Label>
-            <Select
-              value={type}
-              onValueChange={(val) => setType(val as CourseType)}>
-              <SelectTrigger>
-                <SelectValue placeholder='Select program type' />
-              </SelectTrigger>
-              <SelectContent>
-                {typeOptions.map((t) => (
-                  <SelectItem key={t} value={t}>
-                    {t.toUpperCase()}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className='grid grid-cols-2 gap-4'>
-            <div>
-              <Label>Duration *</Label>
-              <Select value={duration} onValueChange={setDuration}>
-                <SelectTrigger>
-                  <SelectValue placeholder='Select duration' />
-                </SelectTrigger>
-                <SelectContent>
-                  {durationOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label>Mode *</Label>
-              <Select value={mode} onValueChange={setMode}>
-                <SelectTrigger>
-                  <SelectValue placeholder='Select mode' />
-                </SelectTrigger>
-                <SelectContent>
-                  {modeOptions.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div>
-            <Label>Overview</Label>
-            <RichTextEditor value={overview} onChange={setOverview} />
-          </div>
-
-          <div className='space-y-4'>
-            <div className='flex justify-between items-center'>
-              <Label>Why Choose This Course *</Label>
-              <Button
-                type='button'
-                variant='outline'
-                size='sm'
-                onClick={addWhyChoose}>
-                <Plus className='h-4 w-4 mr-1' /> Add Reason
-              </Button>
-            </div>
-
-            {whyChoose.map((item, index) => (
-              <div key={index} className='space-y-2 border p-4 rounded-lg'>
-                <Input
-                  placeholder='Reason title'
-                  value={item.title}
-                  onChange={(e) =>
-                    handleWhyChooseChange(index, "title", e.target.value)
-                  }
-                />
-                <Input
-                  placeholder='Reason description'
-                  value={item.description}
-                  onChange={(e) =>
-                    handleWhyChooseChange(index, "description", e.target.value)
-                  }
-                />
-                <Button
-                  variant='destructive'
-                  size='sm'
-                  onClick={() => removeWhyChoose(index)}>
-                  Remove Reason
-                </Button>
+          <div className='space-y-6'>
+            <div className='space-y-4'>
+              <div>
+                <label className='block mb-2 font-medium'>Faculty</label>
+                <Select
+                  value={faculty}
+                  onValueChange={(value) => setFaculty(value as Faculty)}>
+                  <SelectTrigger className='w-full'>
+                    <SelectValue placeholder='Select faculty' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {validFaculties.map((f) => (
+                      <SelectItem key={f} value={f}>
+                        {f}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            ))}
+
+              <div>
+                <label className='block mb-2 font-medium'>Program Type</label>
+                <Select
+                  value={type}
+                  onValueChange={(value) => setType(value as CourseLevel)}>
+                  <SelectTrigger className='w-full'>
+                    <SelectValue placeholder='Select program type' />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {validCourseLevels.map((level) => (
+                      <SelectItem key={level} value={level}>
+                        {level.toUpperCase()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className='block mb-2 font-medium'>Title</label>
+                <Input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder='Material title'
+                />
+              </div>
+
+              <div>
+                <label className='block mb-2 font-medium'>Description</label>
+                <Input
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder='Material description'
+                />
+              </div>
+
+              <div>
+                <label className='block mb-2 font-medium'>PDF File</label>
+                <Input
+                  type='file'
+                  accept='application/pdf'
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  className='cursor-pointer'
+                />
+              </div>
+            </div>
+
+            {error && <p className='text-destructive text-center'>{error}</p>}
+
+            {/* <Button type='submit' className='w-full py-6' disabled={isLoading}>
+          {isLoading ? "Uploading..." : "Upload Material"}
+        </Button> */}
           </div>
         </div>
 
@@ -334,9 +219,9 @@ export default function AddCourseModal() {
               Cancel
             </Button>
           </DialogClose>
-          <Button type='button' onClick={handleSubmit} disabled={isSubmitting}>
-            {isSubmitting && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
-            {isSubmitting ? "Adding..." : "Add Course"}
+          <Button type='button' onClick={handleSubmit} disabled={isLoading}>
+            {isLoading && <Loader2 className='mr-2 h-4 w-4 animate-spin' />}
+            {isLoading ? "Adding..." : "Add Course"}
           </Button>
         </DialogFooter>
       </DialogContent>

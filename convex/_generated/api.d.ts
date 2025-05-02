@@ -21,6 +21,7 @@ import type * as courses from "../courses.js";
 import type * as getAllContent from "../getAllContent.js";
 import type * as hero from "../hero.js";
 import type * as howToApply from "../howToApply.js";
+import type * as materials from "../materials.js";
 import type * as mission from "../mission.js";
 import type * as mutations from "../mutations.js";
 import type * as news from "../news.js";
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   getAllContent: typeof getAllContent;
   hero: typeof hero;
   howToApply: typeof howToApply;
+  materials: typeof materials;
   mission: typeof mission;
   mutations: typeof mutations;
   news: typeof news;

@@ -20,10 +20,10 @@ export function DeleteCourse({
   id,
   course,
 }: {
-  id: Id<"courses">;
+  id: Id<"materials">;
   course: string;
 }) {
-  const deleteCourse = useMutation(api.courses.deleteCourse);
+  const deleteCourse = useMutation(api.materials.deleteCourse);
 
   const [open, setOpen] = useState(false);
   const [isDeleting, setDeleting] = useState(false);
@@ -44,7 +44,7 @@ export function DeleteCourse({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant='destructive' className="w-full">Delete</Button>
+        <Button size='sm'  variant='outline' className="text-red-500 border-red-500">Delete</Button>
       </DialogTrigger>
       <DialogContent className='sm:max-w-md'>
         <DialogHeader>

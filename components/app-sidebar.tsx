@@ -1,6 +1,6 @@
 'use client'
 
-import { BookOpen, Briefcase, GraduationCap, Home, ListChecks, Mail, Users, Newspaper, FileText } from "lucide-react";
+import { Briefcase, GraduationCap, Home, ListChecks, Mail, Users, Newspaper, FileText, NotebookText } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -30,11 +30,11 @@ const items = [
     url: "/requirements",
     icon: ListChecks,
   },
-  {
-    title: "Courses",
-    url: "/courses",
-    icon: BookOpen,
-  },
+  // {
+  //   title: "Courses",
+  //   url: "/courses",
+  //   icon: BookOpen,
+  // },
   {
     title: "News",
     url: "/news",
@@ -54,6 +54,11 @@ const items = [
     title: "How to apply",
     url: "/how-to-apply",
     icon: FileText,
+  },
+  {
+    title: "Course Material",
+    url: "/course-materials",
+    icon: NotebookText,
   },
   {
     title: "Contact Us",
@@ -86,7 +91,7 @@ export function AppSidebar() {
               </p>
             </div>
           </SidebarGroupLabel> */}
-          <SidebarGroupContent className='mt-32'>
+          <SidebarGroupContent className='mt-12'>
             <SidebarMenu className="space-y-2">
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
