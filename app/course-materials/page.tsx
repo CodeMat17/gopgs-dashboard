@@ -1,8 +1,9 @@
 "use client";
 
 import AddCourseModal from "@/components/courses/AddCourse";
-import { DeleteCourse } from "@/components/courses/DeleteCourse";
-import UpdateCourse from "@/components/courses/UpdateCourse";
+import {  DeleteCourseMaterial } from "@/components/materials/DeleteCourseMaterial";
+import UpdateCourseMaterial from "@/components/materials/UpdateCourseMaterial";
+
 import { Button } from "@/components/ui/button";
 
 import { api } from "@/convex/_generated/api";
@@ -62,8 +63,8 @@ export default function UploadMaterial() {
                   </Button>
                 </div>
                 <div className='pt-4 flex justify-end gap-4'>
-                  <DeleteCourse id={material._id} course={material.title} />
-                  <UpdateCourse
+                  <DeleteCourseMaterial id={material._id} course={material.title} />
+                  <UpdateCourseMaterial
                     c_id={material._id}
                     c_faculty={material.faculty}
                     c_type={material.type}

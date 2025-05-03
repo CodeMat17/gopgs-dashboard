@@ -47,7 +47,7 @@ interface UpdateCourseProps {
   c_fileId: Id<"_storage">;
 }
 
-const UpdateCourse = ({
+const UpdateCourseMaterial = ({
   c_id,
   c_title,
   c_faculty,
@@ -180,4 +180,4 @@ const UpdateCourse = ({
   );
 };
 
-export default UpdateCourse;
+export default UpdateCourseMaterial;

@@ -16,7 +16,7 @@ import { useMutation } from "convex/react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export function DeleteCourse({
+export function DeleteCourseMaterial({
   id,
   course,
 }: {
