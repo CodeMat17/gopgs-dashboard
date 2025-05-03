@@ -4,7 +4,6 @@ import sanitizeHtml from "sanitize-html";
 import { generateSlug } from "../lib/slugUtils";
 import { mutation, query } from "./_generated/server";
 import { courseType, facultyType } from "./schema";
-import { Id } from "./_generated/dataModel";
 
 type Faculty = Infer<typeof facultyType>;
 type CourseType = Infer<typeof courseType>;
@@ -22,14 +21,17 @@ export const getCoursesByType = query({
 
 // Get Courses by Faculty
 export const getCoursesByFaculty = query({
-  args: { faculty: facultyType },
-  handler: async (ctx, { faculty }) => {
-    const allCourses = await ctx.db
+  args: {
+    faculty: facultyType,
+    type: courseType,
+  },
+  handler: async (ctx, args) => {
+    return await ctx.db
       .query("courses")
-      .withIndex("by_faculty", (q) => q.eq("faculty", faculty))
+      .withIndex("by_faculty_type", (q) =>
+        q.eq("faculty", args.faculty).eq("type", args.type)
+      )
       .collect();
-
-    return allCourses;
   },
 });
 
@@ -116,10 +118,6 @@ export const updateCourse = mutation({
     mode: v.optional(v.string()),
     faculty: facultyType,
     type: courseType,
-    pdfId: v.optional(v.string()),
-    courseMaterials: v.optional(
-      v.array(v.object({ title: v.string(), file: v.id("_storage") }))
-    ),
   },
   handler: async (ctx, args) => {
     const existingCourse = await ctx.db.get(args.id);
@@ -143,7 +141,6 @@ export const updateCourse = mutation({
       slug?: string;
       faculty?: Faculty;
       type?: CourseType;
-      courseMaterials?: { title: string; file: Id<'_storage'> }[];
     } = {};
 
     // Add fields to update data if they are provided
@@ -156,75 +153,8 @@ export const updateCourse = mutation({
     if (args.type !== undefined) updateData.type = args.type;
     if (slug !== existingCourse.slug) updateData.slug = slug;
 
-    if (args.courseMaterials !== undefined) {
-      updateData.courseMaterials = args.courseMaterials.map((material) => ({
-        title: material.title,
-        file: material.file,
-      }));
-    }
-
-    // Handle course materials (with storageId as URL)
-    // if (args.courseMaterials !== undefined) {
-    //   // Get existing course materials (if any)
-    //   const existingMaterials: { title: string; file: string }[] =
-    //     existingCourse.courseMaterials || [];
-
-    //   // Upload and resolve file URLs for new materials
-    //   const newMaterials = await Promise.all(
-    //     args.courseMaterials.map(async (material) => {
-    //       if (!material.file) {
-    //         return { title: material.title, file: "" };
-    //       }
-    //       const storageUrl = await ctx.storage.getUrl(
-    //         material.file as Id<"_storage">
-    //       );
-    //       return {
-    //         title: material.title,
-    //         file: storageUrl ?? "",
-    //       };
-    //     })
-    //   );
-
-    //   // Merge logic:
-    //   const mergedMaterials: { title: string; file: string }[] = [];
-
-    //   for (
-    //     let i = 0;
-    //     i < Math.max(existingMaterials.length, newMaterials.length);
-    //     i++
-    //   ) {
-    //     const existing = existingMaterials[i];
-    //     const updated = newMaterials[i];
-
-    //     if (updated && updated.title) {
-    //       // If updated material exists at this index, use it
-    //       mergedMaterials.push(updated);
-    //     } else if (existing) {
-    //       // Else, keep existing material
-    //       mergedMaterials.push(existing);
-    //     }
-    //   }
-
-    //   updateData.courseMaterials = mergedMaterials;
-
-    //   // const courseMaterialsWithUrls = await Promise.all(
-    //   //   args.courseMaterials.map(async (material) => {
-    //   //     if (!material.file) {
-    //   //       return { title: material.title, file: "" };
-    //   //     }
-    //   //     const url = await ctx.storage.getUrl(material.file);
-    //   //     return {
-    //   //       title: material.title,
-    //   //       file: url ?? "", // fallback empty if no URL
-    //   //     };
-    //   //   })
-    //   // );
-
-    //   // updateData.courseMaterials = courseMaterialsWithUrls;
-    // }
-
     // Perform the update
-     await ctx.db.patch(args.id, updateData);
+    await ctx.db.patch(args.id, updateData);
   },
 });
 

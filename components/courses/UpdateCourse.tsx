@@ -1,18 +1,6 @@
 "use client";
 
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { api } from "@/convex/_generated/api";
-import { useMutation } from "convex/react";
-import { Loader2 } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogClose,
@@ -21,9 +9,22 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "../ui/dialog";
-import { Input } from "../ui/input";
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { useMutation } from "convex/react";
+import { Loader2, Plus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { RichTextEditor } from "../RichTextEditor";
 
 const validFaculties = [
   "Faculty of Arts",
@@ -34,145 +35,309 @@ const validFaculties = [
 ] as const;
 
 const validCourseLevels = ["pgd", "masters", "phd"] as const;
+const durationOptions = ["1 Year", "2 Years", "3 Years"];
+const modeOptions = ["On-line", "On-campus", "On-line & On-campus"];
 
 type Faculty = (typeof validFaculties)[number];
 type CourseLevel = (typeof validCourseLevels)[number];
+type WhyChooseItem = { title: string; description: string };
 
-interface UpdateCourseProps {
-  c_id: Id<'materials'>;
-  c_title: string;
+type UpdateCourseProps = {
+  id: Id<"courses">;
+  c_course: string;
   c_faculty: Faculty;
-  c_description: string;
+  c_duration: string;
   c_type: CourseLevel;
-  c_fileId: Id<"_storage">;
-}
+  c_mode: string;
+  c_overview: string;
+  c_whyChoose: WhyChooseItem[];
+};
 
 const UpdateCourse = ({
-  c_id,
-  c_title,
+  id,
+  c_course,
   c_faculty,
-  c_description,
+  c_duration,
   c_type,
-  c_fileId,
+  c_mode,
+  c_overview,
+  c_whyChoose,
 }: UpdateCourseProps) => {
   const [open, setOpen] = useState(false);
   const [faculty, setFaculty] = useState<Faculty>(c_faculty);
   const [type, setType] = useState<CourseLevel>(c_type);
-  const [title, setTitle] = useState(c_title);
-  const [description, setDescription] = useState(c_description);
-  const [file, setFile] = useState<File | null>(null);
+  const [course, setCourse] = useState(c_course);
+  const [duration, setDuration] = useState(c_duration);
+  const [mode, setMode] = useState(c_mode);
+  const [overview, setOverview] = useState(c_overview);
+  const [whyChoose, setWhyChoose] = useState<WhyChooseItem[]>(c_whyChoose);
   const [isLoading, setIsLoading] = useState(false);
 
-  const updateCourse = useMutation(api.materials.updateCourse);
-  const generateUploadUrl = useMutation(api.materials.generateUploadUrl);
+  const updateCourse = useMutation(api.courses.updateCourse);
 
- const handleSubmit = async () => {
-   try {
-     setIsLoading(true);
+  // Sync state with props when they change
+  useEffect(() => {
+    setFaculty(c_faculty);
+    setType(c_type);
+    setCourse(c_course);
+    setDuration(c_duration);
+    setMode(c_mode);
+    setOverview(c_overview);
+    setWhyChoose(c_whyChoose);
+  }, [
+    c_course,
+    c_duration,
+    c_faculty,
+    c_mode,
+    c_overview,
+    c_type,
+    c_whyChoose,
+  ]);
 
-     let newFileId: Id<"_storage"> | undefined;
+  const handleWhyChooseChange = (
+    index: number,
+    field: keyof WhyChooseItem,
+    value: string
+  ) => {
+    const updatedWhyChoose = [...whyChoose];
+    updatedWhyChoose[index][field] = value;
+    setWhyChoose(updatedWhyChoose);
+  };
 
-     if (file) {
-       const postUrl = await generateUploadUrl();
-       const result = await fetch(postUrl, {
-         method: "POST",
-         headers: { "Content-Type": file.type },
-         body: file,
-       });
+  const addWhyChooseField = () => {
+    setWhyChoose([...whyChoose, { title: "", description: "" }]);
+  };
 
-         const response = await result.json();
-         newFileId = response.storageId;
-     }
+  const removeWhyChooseField = (index: number) => {
+    if (whyChoose.length === 1) return;
+    const updatedWhyChoose = whyChoose.filter((_, i) => i !== index);
+    setWhyChoose(updatedWhyChoose);
+  };
 
-     await updateCourse({
-       id: c_id,
-       ...(faculty !== c_faculty && { faculty }),
-       ...(type !== c_type && { type }),
-       ...(title !== c_title && { title }),
-       ...(description !== c_description && { description }),
-       file: newFileId || c_fileId,
-     });
+  const handleSubmit = async () => {
+    setIsLoading(true);
 
-     toast.success("Done!", { description: "Material updated successfully" });
-     setOpen(false);
-   } catch (error) {
-     console.log('ErrorMsg: ', error);
-     toast.error("Error!", { description: "Update failed" });
-   } finally {
-     setIsLoading(false);
-   }
- };
+    try {
+      if (!faculty || !type || !course || !duration || !mode || !overview) {
+        throw new Error("All required fields must be filled");
+      }
+
+      if (whyChoose.some((item) => !item.title || !item.description)) {
+        throw new Error("All Why Choose fields must be filled");
+      }
+
+      await updateCourse({
+        id,
+        faculty,
+        type,
+        course,
+        duration,
+        mode,
+        overview,
+        whyChoose,
+      });
+
+      toast.success("Course updated successfully", {
+        description: `${course} has been updated`,
+      });
+
+      setOpen(false);
+    } catch (error) {
+      toast.error("Failed to update course", {
+        description: error instanceof Error ? error.message : "Unknown error",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant='outline'>Update</Button>
+        <Button variant='outline' size='sm' className='w-full'>
+          Update
+        </Button>
       </DialogTrigger>
-      <DialogContent className='max-w-2xl'>
+      <DialogContent className='max-w-2xl max-h-[90vh] flex flex-col'>
         <DialogHeader>
-          <DialogTitle>Update Course Details</DialogTitle>
+          <DialogTitle>Update Course</DialogTitle>
         </DialogHeader>
 
-        <div className='space-y-4'>
-          <Select
-            value={faculty}
-            onValueChange={(v) => setFaculty(v as Faculty)}>
-            <SelectTrigger>
-              <SelectValue placeholder='Select Faculty' />
-            </SelectTrigger>
-            <SelectContent>
-              {validFaculties.map((faculty) => (
-                <SelectItem key={faculty} value={faculty}>
-                  {faculty}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className='flex-1 overflow-y-auto space-y-6 py-4'>
+          {/* Faculty & Program Selection */}
+          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+            <div className='space-y-2'>
+              <label className='block font-medium'>Faculty</label>
+              <Select
+                value={faculty}
+                onValueChange={(value) => setFaculty(value as Faculty)}
+                disabled={isLoading}>
+                <SelectTrigger>
+                  <SelectValue placeholder='Select faculty' />
+                </SelectTrigger>
+                <SelectContent className='bg-gray-200 dark:bg-gray-700'>
+                  {validFaculties.map((f) => (
+                    <SelectItem key={f} value={f} className='py-2'>
+                      {f}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          <Select value={type} onValueChange={(v) => setType(v as CourseLevel)}>
-            <SelectTrigger>
-              <SelectValue placeholder='Select Course Type' />
-            </SelectTrigger>
-            <SelectContent>
-              {validCourseLevels.map((level) => (
-                <SelectItem key={level} value={level}>
-                  {level.toUpperCase()}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <div className='space-y-2'>
+              <label className='block font-medium'>Program Type</label>
+              <Select
+                value={type}
+                onValueChange={(value) => setType(value as CourseLevel)}
+                disabled={isLoading}>
+                <SelectTrigger>
+                  <SelectValue placeholder='Select program type'>
+                    {type.toUpperCase()}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent className='bg-gray-200 dark:bg-gray-700'>
+                  {validCourseLevels.map((level) => (
+                    <SelectItem key={level} value={level} className='py-2'>
+                      {level.toUpperCase()}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
 
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder='Course Title'
-          />
+          {/* Course Details */}
+          <div className='space-y-4'>
+            <div className='space-y-2'>
+              <label className='block font-medium'>Course Title</label>
+              <Input
+                value={course}
+                onChange={(e) => setCourse(e.target.value)}
+                placeholder='Enter course title'
+                disabled={isLoading}
+              />
+            </div>
 
-          <Input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder='Course Description'
-          />
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+              <div className='space-y-2'>
+                <label className='block font-medium'>Duration</label>
+                <Select
+                  value={duration}
+                  onValueChange={setDuration}
+                  disabled={isLoading}>
+                  <SelectTrigger>
+                    <SelectValue placeholder='Select duration' />
+                  </SelectTrigger>
+                  <SelectContent className='bg-gray-200 dark:bg-gray-700'>
+                    {durationOptions.map((dur) => (
+                      <SelectItem key={dur} value={dur} className='py-2'>
+                        {dur}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
+              <div className='space-y-2'>
+                <label className='block font-medium'>Program Mode</label>
+                <Select
+                  value={mode}
+                  onValueChange={setMode}
+                  disabled={isLoading}>
+                  <SelectTrigger>
+                    <SelectValue placeholder='Select mode' />
+                  </SelectTrigger>
+                  <SelectContent className='bg-gray-200 dark:bg-gray-700'>
+                    {modeOptions.map((m, i) => (
+                      <SelectItem key={i} value={m} className='py-2'>
+                        {m}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Course Overview */}
           <div className='space-y-2'>
-            <label className='text-sm font-medium'>Course Material (PDF)</label>
-            <Input
-              type='file'
-              accept='application/pdf'
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
-            />
-            <p className='text-muted-foreground text-sm'>
-              Leave empty to keep current file
-            </p>
+            <label className='block font-medium'>Course Overview</label>
+            <RichTextEditor value={overview} onChange={setOverview} />
+          </div>
+
+          {/* Why Choose This Course */}
+          <div className='space-y-4'>
+            <div className='flex justify-between items-center'>
+              <label className='block font-medium'>
+                Why Choose This Course
+              </label>
+              <Button
+                type='button'
+                variant='outline'
+                size='sm'
+                onClick={addWhyChooseField}
+                disabled={isLoading}>
+                <Plus size={14} className='mr-2' />
+                Add Reason
+              </Button>
+            </div>
+
+            {whyChoose.map((item, index) => (
+              <div key={index} className=' group space-y-1 items-center'>
+               
+                  <Input
+                    value={item.title}
+                    onChange={(e) =>
+                      handleWhyChooseChange(index, "title", e.target.value)
+                    }
+                    placeholder='Reason title'
+                    disabled={isLoading}
+                  />
+
+                  <Input
+                    value={item.description}
+                    onChange={(e) =>
+                      handleWhyChooseChange(
+                        index,
+                        "description",
+                        e.target.value
+                      )
+                    }
+                    placeholder='Reason description'
+                    disabled={isLoading}
+                  />
+                   <Button
+                  variant='destructive'
+               size='sm'
+                  onClick={() => removeWhyChooseField(index)}
+                  disabled={whyChoose.length === 1 || isLoading}
+                  className='opacity-0 group-hover:opacity-100 transition-opacity'>
+                 Remove 
+                </Button>
+                </div>
+               
+           
+            ))}
           </div>
         </div>
 
-        <DialogFooter>
+        {/* Dialog Footer */}
+        <DialogFooter className='border-t pt-4'>
           <DialogClose asChild>
-            <Button variant='outline'>Cancel</Button>
+            <Button variant='secondary' disabled={isLoading}>
+              Cancel
+            </Button>
           </DialogClose>
           <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? <Loader2 className='animate-spin' /> : "Update Course"}
+            {isLoading ? (
+              <>
+                <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                Updating...
+              </>
+            ) : (
+              "Update"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,7 +1,7 @@
 "use client";
 
 import AddCourse from "@/components/courses/AddCourse";
-import FacultyCourseBrowser from "@/components/courses/FacultyCourseBrower";
+import CourseBrowser from "@/components/courses/CourseBrowser";
 
 
 export default function ProgramsPage() {
@@ -12,8 +12,8 @@ export default function ProgramsPage() {
         <AddCourse />
       </div>
 
-      <FacultyCourseBrowser />
-
+     
+<CourseBrowser />
     
     </div>
   );
