@@ -34,7 +34,7 @@ export default async function RootLayout({
 }>) {
   const user = await currentUser();
   const isAdmin = user?.publicMetadata.role === "admin";
-  console.log("Clerk User: ", user?.publicMetadata.role);
+  // console.log("Clerk User: ", user?.publicMetadata.role);
 
   return (
     <Providers>
