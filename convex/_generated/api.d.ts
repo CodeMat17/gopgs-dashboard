@@ -19,6 +19,7 @@ import type * as alumni from "../alumni.js";
 import type * as contactUs from "../contactUs.js";
 import type * as courses from "../courses.js";
 import type * as getAllContent from "../getAllContent.js";
+import type * as gpc from "../gpc.js";
 import type * as hero from "../hero.js";
 import type * as howToApply from "../howToApply.js";
 import type * as materials from "../materials.js";
@@ -46,6 +47,7 @@ declare const fullApi: ApiFromModules<{
   contactUs: typeof contactUs;
   courses: typeof courses;
   getAllContent: typeof getAllContent;
+  gpc: typeof gpc;
   hero: typeof hero;
   howToApply: typeof howToApply;
   materials: typeof materials;

@@ -56,8 +56,13 @@ const items = [
     icon: FileText,
   },
   {
-    title: "Course Material",
+    title: "Course Materials",
     url: "/course-materials",
+    icon: NotebookText,
+  },
+  {
+    title: "GPC Materials",
+    url: "/gpc-materials",
     icon: NotebookText,
   },
   {
@@ -91,7 +96,7 @@ export function AppSidebar() {
               </p>
             </div>
           </SidebarGroupLabel> */}
-          <SidebarGroupContent className='mt-12'>
+          <SidebarGroupContent className='mt-20'>
             <SidebarMenu className="space-y-2">
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>

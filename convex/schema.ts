@@ -209,7 +209,19 @@ export default defineSchema({
     faculty: facultyType,
     type: courseType,
     title: v.string(),
+    semester: v.optional(v.union(v.literal(1), v.literal(2))),
     description: v.string(),
     file: v.id("_storage"),
+    downloads: v.optional(v.number()),
+  }).index("by_faculty_type", ["faculty", "type"]),
+
+  gpc: defineTable({
+    faculty: facultyType,
+    type: courseType,
+    title: v.string(),
+    semester: v.optional(v.union(v.literal(1), v.literal(2))),
+    description: v.string(),
+    file: v.id("_storage"),
+    downloads: v.optional(v.number()),
   }).index("by_faculty_type", ["faculty", "type"]),
 });

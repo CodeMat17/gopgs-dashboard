@@ -17,14 +17,8 @@ import { Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
-export function DeleteCourseMaterial({
-  id,
-  course,
-}: {
-  id: Id<"materials">;
-  course: string;
-}) {
-  const deleteCourse = useMutation(api.materials.deleteCourse);
+export function DeleteGPC({ id, course }: { id: Id<"gpc">; course: string }) {
+  const deleteGPC = useMutation(api.gpc.deleteGPC);
 
   const [open, setOpen] = useState(false);
   const [isDeleting, setDeleting] = useState(false);
@@ -32,7 +26,7 @@ export function DeleteCourseMaterial({
   const handleDelete = async () => {
     setDeleting(true); // Set loading state
     try {
-      await deleteCourse({ id });
+      await deleteGPC({ id });
       toast.success("Done!", { description: "Course deleted successfully!" });
     } catch (error) {
       console.error("Failed to delete course:", error);

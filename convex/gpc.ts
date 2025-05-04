@@ -3,20 +3,20 @@ import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
 import { courseType, facultyType } from "./schema";
 
-export const getAll = query({
+export const getAllGPC = query({
   handler: async (ctx) => {
-    return await ctx.db.query("materials").collect();
+    return await ctx.db.query("gpc").collect();
   },
 });
 
-export const getMaterialsByFacultyType = query({
+export const getGPCByFacultyType = query({
   args: {
     faculty: facultyType,
     type: courseType,
   },
   handler: async ({ db }, args) => {
     return await db
-      .query("materials")
+      .query("gpc")
       .withIndex("by_faculty_type", (q) =>
         q.eq("faculty", args.faculty).eq("type", args.type)
       )
@@ -24,7 +24,7 @@ export const getMaterialsByFacultyType = query({
   },
 });
 
-export const addMaterial = mutation({
+export const addGPC = mutation({
   args: {
     faculty: facultyType,
     type: courseType, // Should match schema definition
@@ -34,7 +34,7 @@ export const addMaterial = mutation({
     semester: v.union(v.literal(1), v.literal(2)),
   },
   handler: async (ctx, args) => {
-    await ctx.db.insert("materials", {
+    await ctx.db.insert("gpc", {
       faculty: args.faculty,
       type: args.type,
       title: args.title,
@@ -45,10 +45,9 @@ export const addMaterial = mutation({
   },
 });
 
-// convex/materials.ts
-export const updateCourse = mutation({
+export const updateGPC = mutation({
   args: {
-    id: v.id("materials"),
+    id: v.id("gpc"),
     faculty: v.optional(facultyType),
     type: v.optional(courseType),
     title: v.optional(v.string()),
@@ -98,8 +97,8 @@ export const downloadFile = mutation({
   },
 });
 
-export const deleteCourse = mutation({
-  args: { id: v.id("materials") },
+export const deleteGPC = mutation({
+  args: { id: v.id("gpc") },
   handler: async (ctx, { id }) => {
     await ctx.db.delete(id);
   },
@@ -118,11 +117,10 @@ export const getDownloadUrl = query({
 });
 
 // Mutation to track downloads (if needed)
-// convex/materials.ts
-// convex/materials.ts
+
 export const trackDownload = mutation({
   args: {
-    materialId: v.id("materials"),
+    materialId: v.id("gpc"),
   },
   handler: async (ctx, args) => {
     const material = await ctx.db.get(args.materialId);

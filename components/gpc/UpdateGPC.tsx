@@ -39,7 +39,7 @@ type Faculty = (typeof validFaculties)[number];
 type CourseLevel = (typeof validCourseLevels)[number];
 
 interface UpdateCourseProps {
-  c_id: Id<"materials">;
+  c_id: Id<"gpc">;
   c_title: string;
   c_faculty: Faculty;
   c_description: string;
@@ -48,7 +48,7 @@ interface UpdateCourseProps {
   c_fileId: Id<"_storage">;
 }
 
-const UpdateCourseMaterial = ({
+const UpdateGPC = ({
   c_id,
   c_title,
   c_faculty,
@@ -66,8 +66,8 @@ const UpdateCourseMaterial = ({
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const updateCourse = useMutation(api.materials.updateCourse);
-  const generateUploadUrl = useMutation(api.materials.generateUploadUrl);
+  const updateCourse = useMutation(api.gpc.updateGPC);
+  const generateUploadUrl = useMutation(api.gpc.generateUploadUrl);
 
   const handleSubmit = async () => {
     try {
@@ -202,4 +202,4 @@ const UpdateCourseMaterial = ({
   );
 };
 
-export default UpdateCourseMaterial;
+export default UpdateGPC;

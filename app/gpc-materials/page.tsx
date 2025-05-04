@@ -1,8 +1,11 @@
 "use client";
 
-import AddCourseMaterial from "@/components/materials/AddCourseMaterial";
-import { DeleteCourseMaterial } from "@/components/materials/DeleteCourseMaterial";
-import UpdateCourseMaterial from "@/components/materials/UpdateCourseMaterial";
+
+
+
+import AddGPCMaterial from "@/components/gpc/AddGPCMaterial";
+import { DeleteGPC } from "@/components/gpc/DeleteGPC";
+import UpdateGPC from "@/components/gpc/UpdateGPC";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -35,7 +38,7 @@ const validFaculties = [
 const validCourseLevels = ["pgd", "masters", "phd"] as const;
 
 type Material = {
-  _id: Id<"materials">;
+  _id: Id<"gpc">;
   _creationTime: number;
   faculty: Faculty;
   type: CourseLevel;
@@ -51,13 +54,13 @@ type SemesterGroup = {
   second: Material[];
 };
 
-export default function DashboardCourseMaterials() {
+export default function DashboardGPCMaterials() {
   const [selectedFaculty, setSelectedFaculty] = useState<Faculty>();
   const [selectedProgram, setSelectedProgram] = useState<CourseLevel>();
 
   // Materials query
-  const materialsQuery = useQuery(
-    api.materials.getMaterialsByFacultyType,
+  const gpcQuery = useQuery(
+    api.gpc.getGPCByFacultyType,
     selectedFaculty && selectedProgram
       ? { faculty: selectedFaculty, type: selectedProgram }
       : "skip"
@@ -65,26 +68,26 @@ export default function DashboardCourseMaterials() {
 
   const semesterMaterials = useMemo<SemesterGroup>(
     () => ({
-      first: materialsQuery?.filter((m) => m.semester === 1) || [],
-      second: materialsQuery?.filter((m) => m.semester === 2) || [],
+      first: gpcQuery?.filter((m) => m.semester === 1) || [],
+      second: gpcQuery?.filter((m) => m.semester === 2) || [],
     }),
-    [materialsQuery]
+    [gpcQuery]
   );
 
-  const isLoading = materialsQuery === undefined;
-  const isEmpty = materialsQuery?.length === 0;
+  const isLoading = gpcQuery === undefined;
+  const isEmpty = gpcQuery?.length === 0;
 
   return (
     <div className='w-full bg-gray-50 dark:bg-gray-950'>
       <div className='px-4 pt-6 pb-12 space-y-8 max-w-5xl mx-auto'>
         <div className='flex gap-4 justify-between'>
           <header className='space-y-2'>
-            <h1 className='text-3xl font-bold'>Course Materials Management</h1>
+            <h1 className='text-3xl font-bold'>GPC Materials Management</h1>
             <p className='text-muted-foreground'>
-              Browse and manage course materials by faculty and program type
+              Browse and manage GPC materials by faculty and program type.
             </p>
           </header>
-          <AddCourseMaterial />
+          <AddGPCMaterial />
         </div>
 
         {/* Selection Controls */}
@@ -198,10 +201,10 @@ const MaterialCard = ({
 }) => {
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadCount, setDownloadCount] = useState(material.downloads);
-  const downloadUrl = useQuery(api.materials.getDownloadUrl, {
+  const downloadUrl = useQuery(api.gpc.getDownloadUrl, {
     storageId: material.file,
   });
-  const trackDownload = useMutation(api.materials.trackDownload);
+  const trackDownload = useMutation(api.gpc.trackDownload);
 
   const handleDownload = async () => {
     if (!downloadUrl) return;
@@ -263,8 +266,8 @@ const MaterialCard = ({
                 )}
               </Button>
 
-              <DeleteCourseMaterial id={material._id} course={material.title} />
-              <UpdateCourseMaterial
+              <DeleteGPC id={material._id} course={material.title} />
+              <UpdateGPC
                 c_id={material._id}
                 c_title={material.title}
                 c_faculty={material.faculty}

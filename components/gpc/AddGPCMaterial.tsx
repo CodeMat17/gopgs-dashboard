@@ -8,9 +8,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
-import { Edit, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
@@ -38,70 +37,61 @@ const validCourseLevels = ["pgd", "masters", "phd"] as const;
 type Faculty = (typeof validFaculties)[number];
 type CourseLevel = (typeof validCourseLevels)[number];
 
-interface UpdateCourseProps {
-  c_id: Id<"materials">;
-  c_title: string;
-  c_faculty: Faculty;
-  c_description: string;
-  c_type: CourseLevel;
-  c_semester: 1 | 2;
-  c_fileId: Id<"_storage">;
-}
-
-const UpdateCourseMaterial = ({
-  c_id,
-  c_title,
-  c_faculty,
-  c_description,
-  c_semester,
-  c_type,
-  c_fileId,
-}: UpdateCourseProps) => {
+const AddGPCMaterial = () => {
   const [open, setOpen] = useState(false);
-  const [faculty, setFaculty] = useState<Faculty>(c_faculty);
-  const [type, setType] = useState<CourseLevel>(c_type);
-  const [title, setTitle] = useState(c_title);
-  const [description, setDescription] = useState(c_description);
-  const [semester, setSemester] = useState<1 | 2>(c_semester);
+  const [faculty, setFaculty] = useState<Faculty>();
+  const [type, setType] = useState<CourseLevel>();
+  const [semester, setSemester] = useState<1 | 2>(); // Add semester state
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const updateCourse = useMutation(api.materials.updateCourse);
-  const generateUploadUrl = useMutation(api.materials.generateUploadUrl);
-
+  const addGPC = useMutation(api.gpc.addGPC);
+    const generateUploadUrl = useMutation(api.gpc.generateUploadUrl);
+    
   const handleSubmit = async () => {
     try {
       setIsLoading(true);
 
-      let newFileId: Id<"_storage"> | undefined;
-
-      if (file) {
-        const postUrl = await generateUploadUrl();
-        const result = await fetch(postUrl, {
-          method: "POST",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-
-        const response = await result.json();
-        newFileId = response.storageId;
+      // Validate all required fields including semester
+      if (!faculty || !type || !title || !description || !file || !semester) {
+        toast.error("Please fill all required fields");
+        return;
       }
 
-      await updateCourse({
-        id: c_id,
+      // Generate upload URL
+      const postUrl = await generateUploadUrl();
+      const result = await fetch(postUrl, {
+        method: "POST",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+
+      const { storageId } = await result.json();
+
+      // Add material with semester
+      await addGPC({
         faculty,
         type,
         title,
         description,
-        semester,
-        file: newFileId || c_fileId,
+        storageId,
+        semester, // Add semester to the mutation
       });
 
-      toast.success("Done", { description: "Material updated successfully" });
+      toast.success("Done!", {description: "Material added successfully"});
       setOpen(false);
+      // Reset form
+      setFaculty(undefined);
+      setType(undefined);
+      setSemester(undefined);
+      setTitle("");
+      setDescription("");
+      setFile(null);
     } catch (error) {
-      console.error("Update error:", error);
-      toast.error("Error!", { description: "Update failed" });
+      console.error("Error:", error);
+      toast.error("Error!", { description: "Submission failed" });
     } finally {
       setIsLoading(false);
     }
@@ -110,19 +100,19 @@ const UpdateCourseMaterial = ({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button size='icon' variant='ghost'>
-          <Edit className='w-4 h-4' />
-        </Button>
+        <Button className='gap-2'>Add GPC Material</Button>
       </DialogTrigger>
       <DialogContent className='max-w-2xl'>
         <DialogHeader>
-          <DialogTitle>Update Course Material</DialogTitle>
+          <DialogTitle>Add New GPC Material</DialogTitle>
         </DialogHeader>
 
         <div className='space-y-4'>
+          {/* Faculty Selector */}
           <Select
             value={faculty}
-            onValueChange={(v) => setFaculty(v as Faculty)}>
+            onValueChange={(v) => setFaculty(v as Faculty)}
+            required>
             <SelectTrigger>
               <SelectValue placeholder='Select Faculty' />
             </SelectTrigger>
@@ -135,7 +125,11 @@ const UpdateCourseMaterial = ({
             </SelectContent>
           </Select>
 
-          <Select value={type} onValueChange={(v) => setType(v as CourseLevel)}>
+          {/* Course Type Selector */}
+          <Select
+            value={type}
+            onValueChange={(v) => setType(v as CourseLevel)}
+            required>
             <SelectTrigger>
               <SelectValue placeholder='Select Course Type' />
             </SelectTrigger>
@@ -148,21 +142,11 @@ const UpdateCourseMaterial = ({
             </SelectContent>
           </Select>
 
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder='Course Title'
-          />
-
-          <Input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder='Course Description'
-          />
-
+          {/* Semester Selector */}
           <Select
-            value={semester.toString()}
-            onValueChange={(v) => setSemester(Number(v) as 1 | 2)}>
+            value={semester?.toString()} // Convert number to string for Select
+            onValueChange={(v) => setSemester(Number(v) as 1 | 2)}
+            required>
             <SelectTrigger>
               <SelectValue placeholder='Select Semester' />
             </SelectTrigger>
@@ -172,16 +156,28 @@ const UpdateCourseMaterial = ({
             </SelectContent>
           </Select>
 
+          <Input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder='Course Title'
+            required
+          />
+
+          <Input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder='Course Description'
+            required
+          />
+
           <div className='space-y-2'>
             <label className='text-sm font-medium'>Course Material (PDF)</label>
             <Input
               type='file'
               accept='application/pdf'
               onChange={(e) => setFile(e.target.files?.[0] || null)}
+              required
             />
-            <p className='text-muted-foreground text-sm'>
-              Leave empty to keep current file
-            </p>
           </div>
         </div>
 
@@ -190,11 +186,7 @@ const UpdateCourseMaterial = ({
             <Button variant='outline'>Cancel</Button>
           </DialogClose>
           <Button onClick={handleSubmit} disabled={isLoading}>
-            {isLoading ? (
-              <Loader2 className='animate-spin' />
-            ) : (
-              "Update Material"
-            )}
+            {isLoading ? <Loader2 className='animate-spin' /> : "Add Material"}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -202,4 +194,4 @@ const UpdateCourseMaterial = ({
   );
 };
 
-export default UpdateCourseMaterial;
+export default AddGPCMaterial;
