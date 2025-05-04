@@ -119,7 +119,10 @@ const UpdateGPC = ({
           <DialogTitle>Update Course Material</DialogTitle>
         </DialogHeader>
 
-        <div className='space-y-4'>
+        <div className='space-y-4 overflow-y-scroll flex-1 h-[calc(100vh-15rem)]'>
+
+            <div className='space-y-1'>
+            <label className='text-sm text-muted-foreground'>Faculty</label>
           <Select
             value={faculty}
             onValueChange={(v) => setFaculty(v as Faculty)}>
@@ -133,8 +136,11 @@ const UpdateGPC = ({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+            </Select>
+            </div>
 
+            <div className='space-y-1'>
+            <label className='text-sm text-muted-foreground'>Program type</label>
           <Select value={type} onValueChange={(v) => setType(v as CourseLevel)}>
             <SelectTrigger>
               <SelectValue placeholder='Select Course Type' />
@@ -146,20 +152,29 @@ const UpdateGPC = ({
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+            </Select>
+            </div>
 
+            <div className='space-y-1'>
+            <label className='text-sm text-muted-foreground'>Course title</label>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder='Course Title'
-          />
+            placeholder='Add Course Title'
+            />
+            </div>
 
+            <div className='space-y-1'>
+            <label className='text-sm text-muted-foreground'>Description</label>
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder='Course Description'
-          />
+            />
+            </div>
 
+            <div className='space-y-1'>
+            <label className='text-sm text-muted-foreground'>Semester</label>
           <Select
             value={semester.toString()}
             onValueChange={(v) => setSemester(Number(v) as 1 | 2)}>
@@ -170,10 +185,11 @@ const UpdateGPC = ({
               <SelectItem value='1'>First Semester</SelectItem>
               <SelectItem value='2'>Second Semester</SelectItem>
             </SelectContent>
-          </Select>
+            </Select>
+            </div>
 
-          <div className='space-y-2'>
-            <label className='text-sm font-medium'>Course Material (PDF)</label>
+          <div className='space-y-1'>
+            <label className='text-sm text-muted-foreground'>Course Material (PDF)</label>
             <Input
               type='file'
               accept='application/pdf'

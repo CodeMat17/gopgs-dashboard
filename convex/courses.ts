@@ -8,6 +8,14 @@ import { courseType, facultyType } from "./schema";
 type Faculty = Infer<typeof facultyType>;
 type CourseType = Infer<typeof courseType>;
 
+
+export const getAllCourses = query({
+  handler: async (ctx) => {
+    return await ctx.db.query("courses").order("desc").collect(); // Make sure to collect results
+  },
+});
+
+
 // Get Courses by Type
 export const getCoursesByType = query({
   args: { type: courseType },

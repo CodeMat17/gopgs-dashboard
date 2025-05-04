@@ -48,8 +48,8 @@ const AddGPCMaterial = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const addGPC = useMutation(api.gpc.addGPC);
-    const generateUploadUrl = useMutation(api.gpc.generateUploadUrl);
-    
+  const generateUploadUrl = useMutation(api.gpc.generateUploadUrl);
+
   const handleSubmit = async () => {
     try {
       setIsLoading(true);
@@ -80,7 +80,7 @@ const AddGPCMaterial = () => {
         semester, // Add semester to the mutation
       });
 
-      toast.success("Done!", {description: "Material added successfully"});
+      toast.success("Done!", { description: "Material added successfully" });
       setOpen(false);
       // Reset form
       setFaculty(undefined);
@@ -107,71 +107,93 @@ const AddGPCMaterial = () => {
           <DialogTitle>Add New GPC Material</DialogTitle>
         </DialogHeader>
 
-        <div className='space-y-4'>
+        <div className='space-y-4 h-[calc(100vh-15rem)] overflow-y-scroll flex-1'>
           {/* Faculty Selector */}
-          <Select
-            value={faculty}
-            onValueChange={(v) => setFaculty(v as Faculty)}
-            required>
-            <SelectTrigger>
-              <SelectValue placeholder='Select Faculty' />
-            </SelectTrigger>
-            <SelectContent>
-              {validFaculties.map((faculty) => (
-                <SelectItem key={faculty} value={faculty}>
-                  {faculty}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className='space-y-1'>
+            <label className='text-sm text-muted-foreground'>Faculty</label>
+
+            <Select
+              value={faculty}
+              onValueChange={(v) => setFaculty(v as Faculty)}
+              required>
+              <SelectTrigger>
+                <SelectValue placeholder='Select Faculty' />
+              </SelectTrigger>
+              <SelectContent>
+                {validFaculties.map((faculty) => (
+                  <SelectItem key={faculty} value={faculty}>
+                    {faculty}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Course Type Selector */}
-          <Select
-            value={type}
-            onValueChange={(v) => setType(v as CourseLevel)}
-            required>
-            <SelectTrigger>
-              <SelectValue placeholder='Select Course Type' />
-            </SelectTrigger>
-            <SelectContent>
-              {validCourseLevels.map((level) => (
-                <SelectItem key={level} value={level}>
-                  {level.toUpperCase()}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className='space-y-1'>
+            <label className='text-sm text-muted-foreground'>
+              Program type
+            </label>
+            <Select
+              value={type}
+              onValueChange={(v) => setType(v as CourseLevel)}
+              required>
+              <SelectTrigger>
+                <SelectValue placeholder='Select Course Type' />
+              </SelectTrigger>
+              <SelectContent>
+                {validCourseLevels.map((level) => (
+                  <SelectItem key={level} value={level}>
+                    {level.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           {/* Semester Selector */}
-          <Select
-            value={semester?.toString()} // Convert number to string for Select
-            onValueChange={(v) => setSemester(Number(v) as 1 | 2)}
-            required>
-            <SelectTrigger>
-              <SelectValue placeholder='Select Semester' />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value='1'>First Semester</SelectItem>
-              <SelectItem value='2'>Second Semester</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className='space-y-1'>
+            <label className='text-sm text-muted-foreground'>Semester</label>
+            <Select
+              value={semester?.toString()} // Convert number to string for Select
+              onValueChange={(v) => setSemester(Number(v) as 1 | 2)}
+              required>
+              <SelectTrigger>
+                <SelectValue placeholder='Select Semester' />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value='1'>First Semester</SelectItem>
+                <SelectItem value='2'>Second Semester</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder='Course Title'
-            required
-          />
+          <div className='space-y-1'>
+            <label className='text-sm text-muted-foreground'>
+              Course title
+            </label>
+            <Input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder='Course Title'
+              required
+            />
+          </div>
 
-          <Input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder='Course Description'
-            required
-          />
+          <div className='space-y-1'>
+            <label className='text-sm text-muted-foreground'>Description</label>
+            <Input
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              placeholder='Course Material Description'
+              required
+            />
+          </div>
 
-          <div className='space-y-2'>
-            <label className='text-sm font-medium'>Course Material (PDF)</label>
+          <div className='space-y-1'>
+            <label className='text-sm text-muted-foreground'>
+              Course Material (PDF)
+            </label>
             <Input
               type='file'
               accept='application/pdf'

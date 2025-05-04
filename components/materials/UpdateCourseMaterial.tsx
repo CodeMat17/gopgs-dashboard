@@ -73,6 +73,14 @@ const UpdateCourseMaterial = ({
     try {
       setIsLoading(true);
 
+      // Validate required fields first
+      if (!faculty || !type || !title || !description || !semester) {
+        toast.error("Validation Error", {
+          description: "All fields are required",
+        });
+        return;
+      }
+
       let newFileId: Id<"_storage"> | undefined;
 
       if (file) {
@@ -87,6 +95,15 @@ const UpdateCourseMaterial = ({
         newFileId = response.storageId;
       }
 
+      // Ensure we have either existing file or new file
+      const fileId = newFileId || c_fileId;
+      if (!fileId) {
+        toast.error("Validation Error", {
+          description: "File attachment is required",
+        });
+        return;
+      }
+
       await updateCourse({
         id: c_id,
         faculty,
@@ -97,11 +114,13 @@ const UpdateCourseMaterial = ({
         file: newFileId || c_fileId,
       });
 
-      toast.success("Done", { description: "Material updated successfully" });
+      toast.success("Success", {
+        description: "Material updated successfully",
+      });
       setOpen(false);
     } catch (error) {
       console.error("Update error:", error);
-      toast.error("Error!", { description: "Update failed" });
+      toast.error("Error!", { description: "Failed to update material" });
     } finally {
       setIsLoading(false);
     }
@@ -119,47 +138,65 @@ const UpdateCourseMaterial = ({
           <DialogTitle>Update Course Material</DialogTitle>
         </DialogHeader>
 
-        <div className='space-y-4'>
-          <Select
-            value={faculty}
-            onValueChange={(v) => setFaculty(v as Faculty)}>
-            <SelectTrigger>
-              <SelectValue placeholder='Select Faculty' />
-            </SelectTrigger>
-            <SelectContent>
-              {validFaculties.map((faculty) => (
-                <SelectItem key={faculty} value={faculty}>
-                  {faculty}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className='space-y-4 overflow-y-scroll flex-1 h-[calc(100vh-14rem)]'>
+          <div className='space-y-1'>
+            <label className='text-muted-foreground text-sm '>Faculty</label>
+            <Select
+              value={faculty}
+              onValueChange={(v) => setFaculty(v as Faculty)}>
+              <SelectTrigger>
+                <SelectValue placeholder='Select Faculty' />
+              </SelectTrigger>
+              <SelectContent>
+                {validFaculties.map((faculty) => (
+                  <SelectItem key={faculty} value={faculty}>
+                    {faculty}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select value={type} onValueChange={(v) => setType(v as CourseLevel)}>
-            <SelectTrigger>
-              <SelectValue placeholder='Select Course Type' />
-            </SelectTrigger>
-            <SelectContent>
-              {validCourseLevels.map((level) => (
-                <SelectItem key={level} value={level}>
-                  {level.toUpperCase()}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className='space-y-1'>
+            <label className='text-muted-foreground text-sm '>
+              Program type
+            </label>
+            <Select
+              value={type}
+              onValueChange={(v) => setType(v as CourseLevel)}>
+              <SelectTrigger>
+                <SelectValue placeholder='Select Course Type' />
+              </SelectTrigger>
+              <SelectContent>
+                {validCourseLevels.map((level) => (
+                  <SelectItem key={level} value={level}>
+                    {level.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
+           <div className="space-y-1">
+            <label className="text-muted-foreground text-sm ">Course title</label>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder='Course Title'
-          />
+            />
+            </div>
 
+           <div className="space-y-1">
+            <label className="text-muted-foreground text-sm ">Course description</label>
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder='Course Description'
-          />
+            />
+            </div>
 
+           <div className="space-y-1">
+            <label className="text-muted-foreground text-sm ">Semester</label>
           <Select
             value={semester.toString()}
             onValueChange={(v) => setSemester(Number(v) as 1 | 2)}>
@@ -170,10 +207,11 @@ const UpdateCourseMaterial = ({
               <SelectItem value='1'>First Semester</SelectItem>
               <SelectItem value='2'>Second Semester</SelectItem>
             </SelectContent>
-          </Select>
+            </Select>
+            </div>
 
-          <div className='space-y-2'>
-            <label className='text-sm font-medium'>Course Material (PDF)</label>
+          <div className='space-y-1'>
+            <label className='text-sm text-muted-foreground'>Course Material (PDF)</label>
             <Input
               type='file'
               accept='application/pdf'

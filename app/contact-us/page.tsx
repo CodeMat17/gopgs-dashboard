@@ -11,14 +11,14 @@ export default function ContactPage() {
   const info = useQuery(api.contactUs.getContactInfo);
 
   return (
-    <div className='w-full min-h-screen max-w-5xl mx-auto px-4 pb-12'>
+    <div className='w-full min-h-screen max-w-3xl mx-auto px-4 pb-12'>
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}>
         <h1 className='text-4xl font-bold mb-8 text-center'>Contact Us</h1>
 
-        <div className='grid lg:grid-cols-2 gap-8'>
+        <div className='grid grid-cols-1 gap-8'>
           {/* Contact Information */}
           <div className='space-y-6'>
             <motion.div
@@ -31,10 +31,6 @@ export default function ContactPage() {
             </motion.div>
           </div>
         </div>
-
-        {/* <UniversityMap /> */}
-
-        {/* Map Section */}
       </motion.div>
     </div>
   );

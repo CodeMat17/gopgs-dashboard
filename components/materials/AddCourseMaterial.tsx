@@ -107,9 +107,11 @@ const AddCourseMaterial = () => {
           <DialogTitle>Add New Course Material</DialogTitle>
         </DialogHeader>
 
-        <div className='space-y-4'>
+        <div className='space-y-4 overflow-y-scroll flex-1 h-[calc(100vh-15rem)]'>
           {/* Faculty Selector */}
-          <Select
+          <div className="space-y-1">
+            <label className="text-muted-foreground text-sm ">Faculty</label>
+             <Select
             value={faculty}
             onValueChange={(v) => setFaculty(v as Faculty)}
             required>
@@ -124,14 +126,18 @@ const AddCourseMaterial = () => {
               ))}
             </SelectContent>
           </Select>
+          </div>
+         
 
           {/* Course Type Selector */}
+           <div className="space-y-1">
+            <label className="text-muted-foreground text-sm ">Program type</label>
           <Select
             value={type}
             onValueChange={(v) => setType(v as CourseLevel)}
             required>
             <SelectTrigger>
-              <SelectValue placeholder='Select Course Type' />
+              <SelectValue placeholder='Select program Type' />
             </SelectTrigger>
             <SelectContent>
               {validCourseLevels.map((level) => (
@@ -140,9 +146,12 @@ const AddCourseMaterial = () => {
                 </SelectItem>
               ))}
             </SelectContent>
-          </Select>
+            </Select>
+            </div>
 
           {/* Semester Selector */}
+           <div className="space-y-1">
+            <label className="text-muted-foreground text-sm ">Semester</label>
           <Select
             value={semester?.toString()} // Convert number to string for Select
             onValueChange={(v) => setSemester(Number(v) as 1 | 2)}
@@ -154,24 +163,31 @@ const AddCourseMaterial = () => {
               <SelectItem value='1'>First Semester</SelectItem>
               <SelectItem value='2'>Second Semester</SelectItem>
             </SelectContent>
-          </Select>
+            </Select>
+            </div>
 
+           <div className="space-y-1">
+            <label className="text-muted-foreground text-sm ">Course title</label>
           <Input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder='Course Title'
+            placeholder='Add Course Title'
             required
-          />
+            />
+            </div>
 
+           <div className="space-y-1">
+            <label className="text-muted-foreground text-sm ">Course Description</label>
           <Input
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder='Course Description'
+            placeholder='Add Course Description'
             required
-          />
+            />
+            </div>
 
           <div className='space-y-2'>
-            <label className='text-sm font-medium'>Course Material (PDF)</label>
+            <label className='text-sm text-muted-foreground'>Course Material (PDF)</label>
             <Input
               type='file'
               accept='application/pdf'
