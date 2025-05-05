@@ -65,32 +65,35 @@ export const getStudents = query({
   handler: async (ctx, args) => {
     const { faculty, type } = args;
 
+    let results;
+
     if (faculty !== undefined && type !== undefined) {
-      return await ctx.db
+      results = await ctx.db
         .query("students")
         .withIndex("by_faculty_type", (q) =>
           q.eq("faculty", faculty).eq("type", type)
         )
         .collect();
-    }
-
-    if (faculty !== undefined) {
-      return await ctx.db
+    } else if (faculty !== undefined) {
+      results = await ctx.db
         .query("students")
         .withIndex("by_faculty", (q) => q.eq("faculty", faculty))
         .collect();
-    }
-
-    if (type !== undefined) {
-      return await ctx.db
+    } else if (type !== undefined) {
+      results = await ctx.db
         .query("students")
         .withIndex("by_type", (q) => q.eq("type", type))
         .collect();
+    } else {
+      results = await ctx.db.query("students").collect();
     }
 
-    return await ctx.db.query("students").collect();
+    return results.sort((a, b) =>
+      a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+    );
   },
 });
+
 
 // convex/students.ts
 export const getStatistics = query({

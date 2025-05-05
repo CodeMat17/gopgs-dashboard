@@ -1,6 +1,7 @@
 // app/students/page.tsx
 "use client";
 
+import AddStudents from "@/components/students/AddStudents";
 import { StudentCardList } from "@/components/students/StudentCardList";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -52,14 +53,17 @@ export default function StudentsSection() {
   return (
     <div className='w-full bg-slate-50 dark:bg-slate-950'>
       <section className='space-y-8 p-6 max-w-5xl mx-auto'>
-        <header className='space-y-2 text-center'>
-          <h1 className='text-4xl font-bold tracking-tight'>
+        <header className='flex gap-4 justify-between'>
+          <div className='space-y-2'>
+             <h1 className='text-4xl font-bold tracking-tight'>
             Postgraduate Student Directory
           </h1>
           <p className='text-muted-foreground'>
             Explore and manage postgraduate student records across faculties and
             programs
           </p>
+          </div>
+         <AddStudents />
         </header>
 
         <div className='w-full bg-white dark:bg-slate-700 p-7 rounded-lg sm:max-w-xs flex flex-col justify-center items-center'>
