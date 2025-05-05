@@ -1,5 +1,5 @@
 import { defineSchema, defineTable } from "convex/server";
-import { v } from "convex/values";
+import { Infer, v } from "convex/values";
 
 export const courseType = v.union(
   v.literal("pgd"),
@@ -14,6 +14,9 @@ export const facultyType = v.union(
   v.literal("Faculty of Nat. Science & Environmental Studies"),
   v.literal("Faculty of Law")
 );
+
+export type CourseType = Infer<typeof courseType>;
+export type FacultyType = Infer<typeof facultyType>;
 
 export default defineSchema({
   hero: defineTable({
@@ -203,7 +206,11 @@ export default defineSchema({
     regno: v.string(),
     faculty: facultyType,
     type: courseType,
-  }).index("by_regno", ["regno"]),
+  })
+    .index("by_regno", ["regno"])
+    .index("by_faculty_type", ["faculty", "type"])
+    .index("by_faculty", ["faculty"])
+    .index("by_type", ["type"]),
 
   materials: defineTable({
     faculty: facultyType,

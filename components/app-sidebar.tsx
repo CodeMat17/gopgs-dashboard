@@ -1,6 +1,6 @@
 'use client'
 
-import { Briefcase, GraduationCap, Home, ListChecks, Mail, Users, Newspaper, FileText, NotebookText, BookOpen } from "lucide-react";
+import { Briefcase, GraduationCap, Home, ListChecks, Mail, Users, Newspaper, FileText, NotebookText, BookOpen, Users2 } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -66,6 +66,11 @@ const items = [
     icon: NotebookText,
   },
   {
+    title: "Students Database",
+    url: "/pg-students",
+    icon: Users2,
+  },
+  {
     title: "Contact Us",
     url: "/contact-us",
     icon: Mail,
@@ -97,7 +102,7 @@ export function AppSidebar() {
             </div>
           </SidebarGroupLabel> */}
           <SidebarGroupContent className='mt-20'>
-            <SidebarMenu className="space-y-2">
+            <SidebarMenu className="space-y-1 sm:space-y-0">
               {items.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild>
