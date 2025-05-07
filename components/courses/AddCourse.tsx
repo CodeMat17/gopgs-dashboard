@@ -35,7 +35,7 @@ const validFaculties = [
 ] as const;
 
 const validCourseLevels = ["pgd", "masters", "phd"] as const;
-const durationOptions = ["1 Year", "2 Years", "3 Years"];
+const durationOptions = ["12 Months", "18 Months", "24 Months", "30 Months", "36 Months"];
 const modeOptions = ["On-line", "On-Campus", "On-line & On-campus"];
 
 type Faculty = (typeof validFaculties)[number];
