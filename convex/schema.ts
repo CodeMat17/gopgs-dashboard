@@ -231,4 +231,98 @@ export default defineSchema({
     file: v.id("_storage"),
     downloads: v.optional(v.number()),
   }).index("by_faculty_type", ["faculty", "type"]),
+
+  pgdFees: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    amount: v.string(),
+    details: v.array(
+      v.object({
+        bank: v.string(),
+        accountNumber: v.string(),
+        accountName: v.string(),
+      })
+    ),
+  }),
+
+  mastersFees: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    amount: v.string(),
+    details: v.array(
+      v.object({
+        bank: v.string(),
+        accountNumber: v.string(),
+        accountName: v.string(),
+      })
+    ),
+  }),
+
+  phdGeneralFees: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    amount: v.string(),
+    details: v.array(
+      v.object({
+        bank: v.string(),
+        accountNumber: v.string(),
+        accountName: v.string(),
+      })
+    ),
+  }),
+
+  phdNatSciFees: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    amount: v.string(),
+    details: v.array(
+      v.object({
+        bank: v.string(),
+        accountNumber: v.string(),
+        accountName: v.string(),
+      })
+    ),
+  }),
+
+  phdEduFees: defineTable({
+    title: v.string(),
+    description: v.optional(v.string()),
+    amount: v.string(),
+    details: v.array(
+      v.object({
+        bank: v.string(),
+        accountNumber: v.string(),
+        accountName: v.string(),
+      })
+    ),
+  }),
+
+  additionalFees: defineTable({
+    title: v.string(),
+    amount: v.string(),
+    description: v.optional(v.string()),
+    bank: v.string(),
+    accountNumber: v.string(),
+    accountName: v.string(),
+  }),
+
+  extraFeesAccount: defineTable({
+    bankName: v.string(),
+    accountNumber: v.string(),
+    accountName: v.string(),
+  }),
+
+  extraFees: defineTable({
+    feeType: v.union(
+      v.literal("Course Deferment"),
+      v.literal("Development Levy"),
+      v.literal("Exams Levy"),
+      v.literal("Change of Supervisor"),
+      v.literal("Change of Department"),
+      v.literal("Utility Levy"),
+      v.literal("Carryover Fee")
+    ),
+    amount: v.string(),
+    carryoverNote: v.optional(v.string()),
+  }).index("by_feeType", ["feeType"]),
 });
