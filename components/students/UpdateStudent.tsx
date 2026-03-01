@@ -35,13 +35,12 @@ const validFaculties = [
 
 const validCourseLevels = ["pgd", "masters", "phd"] as const;
 
-type Faculty = (typeof validFaculties)[number];
 type CourseLevel = (typeof validCourseLevels)[number];
 
 interface UpdateStudentProps {
   s_id: string;
   s_name: string;
-  s_faculty: Faculty;
+  s_faculty: string;
   s_regno: string;
   s_type: CourseLevel;
   s_email: string;
@@ -58,7 +57,7 @@ const UpdateStudent = ({
   s_phone,
 }: UpdateStudentProps) => {
   const [open, setOpen] = useState(false);
-  const [faculty, setFaculty] = useState<Faculty>(s_faculty);
+  const [faculty, setFaculty] = useState<string>(s_faculty);
   const [type, setType] = useState<CourseLevel>(s_type);
   const [name, setName] = useState(s_name);
   const [regno, setRegNo] = useState(s_regno);
@@ -150,7 +149,7 @@ const UpdateStudent = ({
               <label className='text-sm text-muted-foreground'>Faculty</label>
               <Select
                 value={faculty}
-                onValueChange={(v) => setFaculty(v as Faculty)}>
+                onValueChange={(v) => setFaculty(v)}>
                 <SelectTrigger>
                   <SelectValue placeholder='Select Faculty' />
                 </SelectTrigger>

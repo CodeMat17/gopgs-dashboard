@@ -1,5 +1,5 @@
 // components/students/StudentCardList.tsx
-import { CourseType, FacultyType } from "@/convex/schema";
+import { CourseType } from "@/convex/schema";
 import { cn } from "@/lib/utils";
 import { Mail, Phone } from "lucide-react";
 import { DeleteStudent } from "./DeleteStudent";
@@ -11,7 +11,7 @@ export interface Student {
   email: string;
   phone: string;
   regno: string;
-  faculty: FacultyType;
+  faculty: string;
   type: CourseType;
 }
 
