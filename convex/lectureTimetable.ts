@@ -3,13 +3,24 @@ import { mutation, query } from "./_generated/server";
 
 // ── Queries ────────────────────────────────────────────────────────────────
 
-export const getAllFees = query({
+export const getAllLectureTimetables = query({
   handler: async (ctx) => {
-    return await ctx.db.query("fees").order("desc").collect();
+    return await ctx.db.query("lectureTimetable").order("desc").collect();
   },
 });
 
-export const getFeeUrl = query({
+export const getLectureTimetablesByFaculty = query({
+  args: { faculty: v.string() },
+  handler: async (ctx, { faculty }) => {
+    return await ctx.db
+      .query("lectureTimetable")
+      .withIndex("by_faculty", (q) => q.eq("faculty", faculty))
+      .order("desc")
+      .collect();
+  },
+});
+
+export const getLectureTimetableUrl = query({
   args: { storageId: v.id("_storage") },
   handler: async (ctx, { storageId }) => {
     return await ctx.storage.getUrl(storageId);
@@ -24,15 +35,19 @@ export const generateUploadUrl = mutation({
   },
 });
 
-export const uploadFees = mutation({
+export const uploadLectureTimetable = mutation({
   args: {
     title: v.string(),
+    faculty: v.string(),
+    semester: v.optional(v.union(v.literal(1), v.literal(2))),
     description: v.optional(v.string()),
     storageId: v.id("_storage"),
   },
   handler: async (ctx, args) => {
-    return await ctx.db.insert("fees", {
+    return await ctx.db.insert("lectureTimetable", {
       title: args.title,
+      faculty: args.faculty,
+      semester: args.semester,
       description: args.description,
       file: args.storageId,
       uploadedAt: Date.now(),
@@ -41,19 +56,23 @@ export const uploadFees = mutation({
   },
 });
 
-export const updateFees = mutation({
+export const updateLectureTimetable = mutation({
   args: {
-    id: v.id("fees"),
+    id: v.id("lectureTimetable"),
     title: v.optional(v.string()),
+    faculty: v.optional(v.string()),
+    semester: v.optional(v.union(v.literal(1), v.literal(2))),
     description: v.optional(v.string()),
     storageId: v.optional(v.id("_storage")),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.id);
-    if (!existing) throw new Error("Fee document not found");
+    if (!existing) throw new Error("Lecture timetable not found");
 
     const patch: Record<string, unknown> = {};
     if (args.title !== undefined) patch.title = args.title;
+    if (args.faculty !== undefined) patch.faculty = args.faculty;
+    if (args.semester !== undefined) patch.semester = args.semester;
     if (args.description !== undefined) patch.description = args.description;
     if (args.storageId !== undefined) {
       patch.file = args.storageId;
@@ -64,21 +83,21 @@ export const updateFees = mutation({
   },
 });
 
-export const deleteFees = mutation({
-  args: { id: v.id("fees") },
+export const deleteLectureTimetable = mutation({
+  args: { id: v.id("lectureTimetable") },
   handler: async (ctx, { id }) => {
     const doc = await ctx.db.get(id);
-    if (!doc) throw new Error("Fee document not found");
+    if (!doc) throw new Error("Lecture timetable not found");
     await ctx.storage.delete(doc.file);
     await ctx.db.delete(id);
   },
 });
 
 export const trackDownload = mutation({
-  args: { id: v.id("fees") },
+  args: { id: v.id("lectureTimetable") },
   handler: async (ctx, { id }) => {
     const doc = await ctx.db.get(id);
-    if (!doc) throw new Error("Fee document not found");
+    if (!doc) throw new Error("Lecture timetable not found");
     await ctx.db.patch(id, { downloads: (doc.downloads ?? 0) + 1 });
   },
 });

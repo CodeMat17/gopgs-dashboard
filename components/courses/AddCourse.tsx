@@ -19,32 +19,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { api } from "@/convex/_generated/api";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { Loader2, Plus, Trash } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { RichTextEditor } from "../RichTextEditor";
 import { generateSlug } from "@/lib/slugUtils";
 
-const validFaculties = [
-  "Faculty of Arts",
-  "Faculty of Education",
-  "Faculty of Mgt. & Social Sciences",
-  "Faculty of Nat. Science & Environmental Studies",
-  "Faculty of Law",
-] as const;
-
 const validCourseLevels = ["pgd", "masters", "phd"] as const;
 const durationOptions = ["12 Months", "18 Months", "24 Months", "30 Months", "36 Months"];
 const modeOptions = ["On-line", "On-Campus", "On-line & On-campus"];
 
-type Faculty = (typeof validFaculties)[number];
 type CourseLevel = (typeof validCourseLevels)[number];
 type WhyChooseItem = { title: string; description: string };
 
 export default function AddCourseModal() {
   const [open, setOpen] = useState(false);
-  const [faculty, setFaculty] = useState<Faculty>();
+  const [faculty, setFaculty] = useState<string>("");
   const [type, setType] = useState<CourseLevel>();
   const [course, setCourse] = useState("");
   const [duration, setDuration] = useState("");
@@ -56,6 +47,7 @@ export default function AddCourseModal() {
   const [isLoading, setIsLoading] = useState(false);
 
   const addCourse = useMutation(api.courses.addCourse);
+  const faculties = useQuery(api.faculties.getFaculties);
 
   const handleWhyChooseChange = (
     index: number,
@@ -81,7 +73,6 @@ export default function AddCourseModal() {
     setIsLoading(true);
 
     try {
-      // Frontend validation
       if (!faculty || !type || !course || !duration || !mode || !overview) {
         throw new Error("All required fields must be filled");
       }
@@ -107,8 +98,7 @@ export default function AddCourseModal() {
         description: `${course} has been created`,
       });
 
-      // Reset form
-      setFaculty(undefined);
+      setFaculty("");
       setType(undefined);
       setCourse("");
       setDuration("");
@@ -145,15 +135,15 @@ export default function AddCourseModal() {
               <label className='block font-medium'>Faculty</label>
               <Select
                 value={faculty}
-                onValueChange={(value) => setFaculty(value as Faculty)}
+                onValueChange={setFaculty}
                 disabled={isLoading}>
                 <SelectTrigger>
                   <SelectValue placeholder='Select faculty' />
                 </SelectTrigger>
                 <SelectContent className='bg-gray-200 dark:bg-gray-700'>
-                  {validFaculties.map((f) => (
-                    <SelectItem key={f} value={f} className='py-2'>
-                      {f}
+                  {faculties?.map((f) => (
+                    <SelectItem key={f._id} value={f.name} className='py-2'>
+                      {f.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -187,7 +177,7 @@ export default function AddCourseModal() {
               <Input
                 value={course}
                 onChange={(e) => setCourse(e.target.value)}
-                placeholder='Enter course tile'
+                placeholder='Enter course title'
                 disabled={isLoading}
               />
             </div>
@@ -203,12 +193,9 @@ export default function AddCourseModal() {
                     <SelectValue placeholder='Select duration' />
                   </SelectTrigger>
                   <SelectContent className='bg-gray-200 dark:bg-gray-700'>
-                    {durationOptions.map((duration) => (
-                      <SelectItem
-                        key={duration}
-                        value={duration}
-                        className='py-2'>
-                        {duration}
+                    {durationOptions.map((d) => (
+                      <SelectItem key={d} value={d} className='py-2'>
+                        {d}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -225,9 +212,9 @@ export default function AddCourseModal() {
                     <SelectValue placeholder='Select mode' />
                   </SelectTrigger>
                   <SelectContent className='bg-gray-200 dark:bg-gray-700'>
-                    {modeOptions.map((mode) => (
-                      <SelectItem key={mode} value={mode} className="py-2">
-                        {mode}
+                    {modeOptions.map((m) => (
+                      <SelectItem key={m} value={m} className='py-2'>
+                        {m}
                       </SelectItem>
                     ))}
                   </SelectContent>

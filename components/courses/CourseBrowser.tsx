@@ -11,6 +11,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
+
 import { motion } from "framer-motion";
 import { BookOpen, Clock, X } from "lucide-react";
 import { useState } from "react";
@@ -20,17 +21,8 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 import { Input } from "../ui/input";
 
-type Faculty = (typeof faculties)[number];
 type CourseLevel = "all" | "pgd" | "masters" | "phd";
 const courseLevels: CourseLevel[] = ["all", "pgd", "masters", "phd"];
-
-const faculties = [
-  "Faculty of Arts",
-  "Faculty of Education",
-  "Faculty of Mgt. & Social Sciences",
-  "Faculty of Nat. Science & Environmental Studies",
-  "Faculty of Law",
-] as const;
 
 // Add type guard validation
 const isValidCourseLevel = (value: string): value is CourseLevel => {
@@ -46,13 +38,12 @@ const levelConfig = {
 } as const;
 
 export default function CourseBrowser() {
-  const [selectedFaculty, setSelectedFaculty] = useState<Faculty | "all">(
-    "all"
-  );
+  const [selectedFaculty, setSelectedFaculty] = useState<string>("all");
   const [selectedProgram, setSelectedProgram] = useState<CourseLevel>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
   const allCourses = useQuery(api.courses.getAllCourses);
+  const faculties = useQuery(api.faculties.getFaculties);
   const isLoading = allCourses === undefined;
 
   // Client-side filtering
@@ -86,17 +77,15 @@ export default function CourseBrowser() {
           </label>
           <Select
             value={selectedFaculty}
-            onValueChange={(value: Faculty | "all") =>
-              setSelectedFaculty(value)
-            }>
+            onValueChange={setSelectedFaculty}>
             <SelectTrigger className='w-full h-10 bg-white dark:bg-gray-700'>
               <SelectValue placeholder='Select faculty' />
             </SelectTrigger>
             <SelectContent className='dark:bg-gray-700'>
               <SelectItem value='all'>All Faculties</SelectItem>
-              {faculties.map((faculty) => (
-                <SelectItem key={faculty} value={faculty} className='py-2'>
-                  {faculty.replace("Faculty of ", "")}
+              {faculties?.map((f) => (
+                <SelectItem key={f._id} value={f.name} className='py-2'>
+                  {f.name.replace("Faculty of ", "")}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -1,7 +1,7 @@
 // convex/materials.ts
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { courseType, facultyType } from "./schema";
+import { courseType } from "./schema";
 
 export const getAll = query({
   handler: async (ctx) => {
@@ -11,7 +11,7 @@ export const getAll = query({
 
 export const getMaterialsByFacultyType = query({
   args: {
-    faculty: facultyType,
+    faculty: v.string(),
     type: courseType,
   },
   handler: async ({ db }, args) => {
@@ -26,7 +26,7 @@ export const getMaterialsByFacultyType = query({
 
 export const addMaterial = mutation({
   args: {
-    faculty: facultyType,
+    faculty: v.string(),
     type: courseType, // Should match schema definition
     title: v.string(),
     description: v.string(),
@@ -49,7 +49,7 @@ export const addMaterial = mutation({
 export const updateCourse = mutation({
   args: {
     id: v.id("materials"),
-    faculty: v.optional(facultyType),
+    faculty: v.optional(v.string()),
     type: v.optional(courseType),
     title: v.optional(v.string()),
     description: v.optional(v.string()),

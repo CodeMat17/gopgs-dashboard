@@ -1,6 +1,6 @@
 import { mutation, query } from "./_generated/server";
 import { v } from "convex/values";
-import { courseType, facultyType } from "./schema";
+import { courseType } from "./schema";
 
 
 export const getStudentByRegno = query({
@@ -19,7 +19,7 @@ export const addStudent = mutation({
     email: v.string(),
     phone: v.string(),
     regno: v.string(),
-    faculty: facultyType,
+    faculty: v.string(),
     type: courseType,
   },
   handler: async (ctx, args) => {
@@ -41,7 +41,7 @@ export const updateStudent = mutation({
     email: v.string(),
     phone: v.string(),
     regno: v.string(),
-    faculty: facultyType,
+    faculty: v.string(),
     type: courseType,
   },
   handler: async (ctx, args) => {
@@ -59,7 +59,7 @@ export const updateStudent = mutation({
 // convex/students.ts
 export const getStudents = query({
   args: {
-    faculty: v.optional(facultyType),
+    faculty: v.optional(v.string()),
     type: v.optional(courseType),
   },
   handler: async (ctx, args) => {

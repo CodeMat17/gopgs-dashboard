@@ -3,9 +3,8 @@ import { v } from "convex/values";
 import sanitizeHtml from "sanitize-html";
 import { generateSlug } from "../lib/slugUtils";
 import { mutation, query } from "./_generated/server";
-import { courseType, facultyType } from "./schema";
+import { courseType } from "./schema";
 
-type Faculty = Infer<typeof facultyType>;
 type CourseType = Infer<typeof courseType>;
 
 
@@ -30,7 +29,7 @@ export const getCoursesByType = query({
 // Get Courses by Faculty
 export const getCoursesByFaculty = query({
   args: {
-    faculty: facultyType,
+    faculty: v.string(),
     type: courseType,
   },
   handler: async (ctx, args) => {
@@ -61,7 +60,7 @@ export const addCourse = mutation({
     duration: v.string(),
     overview: v.string(),
     mode: v.string(),
-    faculty: facultyType,
+    faculty: v.string(),
     whyChoose: v.array(
       v.object({
         title: v.string(),
@@ -124,7 +123,7 @@ export const updateCourse = mutation({
     ),
     duration: v.optional(v.string()),
     mode: v.optional(v.string()),
-    faculty: facultyType,
+    faculty: v.string(),
     type: courseType,
   },
   handler: async (ctx, args) => {
@@ -147,7 +146,7 @@ export const updateCourse = mutation({
       duration?: string;
       mode?: string;
       slug?: string;
-      faculty?: Faculty;
+      faculty?: string;
       type?: CourseType;
     } = {};
 

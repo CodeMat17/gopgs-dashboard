@@ -1,6 +1,6 @@
 'use client'
 
-import { Briefcase, GraduationCap, Home, ListChecks, Mail, Users, Newspaper, FileText, NotebookText, BookOpen, Users2, Banknote } from "lucide-react";
+import { Briefcase, GraduationCap, Home, ListChecks, Mail, Users, Newspaper, FileText, NotebookText, BookOpen, Users2, Banknote, CalendarDays } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -74,6 +74,11 @@ const items = [
     title: "Fees",
     url: "/fees",
     icon: Banknote,
+  },
+  {
+    title: "Timetable",
+    url: "/timetable",
+    icon: CalendarDays,
   },
   {
     title: "Contact Us",

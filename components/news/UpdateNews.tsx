@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,16 +9,34 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
-import { ImagePlus, Minus, X } from "lucide-react";
+import { ImagePlus, Loader2, Pencil, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { RichTextEditor } from "../RichTextEditor";
-import { Button } from "../ui/button";
-import { Input } from "../ui/input";
+import { Badge } from "../ui/badge";
+
+type ExistingImage = {
+  source: "existing";
+  url: string;
+  storageId: Id<"_storage">;
+};
+
+type NewImage = {
+  source: "new";
+  previewUrl: string;
+  storageId: Id<"_storage"> | null;
+  uploading: boolean;
+  file: File;
+};
+
+type ImageEntry = ExistingImage | NewImage;
+
+const MAX_SIZE = 2 * 1024 * 1024;
 
 const UpdateNews = ({ slug }: { slug: string }) => {
   const selectedNews = useQuery(api.news.getNewsBySlug, { slug });
@@ -30,9 +49,7 @@ const UpdateNews = ({ slug }: { slug: string }) => {
   const [title, setTitle] = useState("");
   const [author, setAuthor] = useState("");
   const [content, setContent] = useState("");
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [storageId, setStorageId] = useState<Id<"_storage"> | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  const [images, setImages] = useState<ImageEntry[]>([]);
   const [posting, setPosting] = useState(false);
 
   useEffect(() => {
@@ -40,62 +57,111 @@ const UpdateNews = ({ slug }: { slug: string }) => {
       setTitle(selectedNews.title);
       setAuthor(selectedNews.author);
       setContent(selectedNews.content);
-      setPreviewUrl(selectedNews.coverImage);
+
+      if (selectedNews.images && selectedNews.images.length > 0) {
+        setImages(
+          selectedNews.images.map((img) => ({
+            source: "existing" as const,
+            url: img.url,
+            storageId: img.storageId,
+          }))
+        );
+      } else if (selectedNews.storageId && selectedNews.coverImage) {
+        setImages([
+          {
+            source: "existing" as const,
+            url: selectedNews.coverImage,
+            storageId: selectedNews.storageId,
+          },
+        ]);
+      } else {
+        setImages([]);
+      }
     }
   }, [selectedNews]);
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleFilesSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (!files.length) return;
 
-    if (file.size > 1024 * 1024) {
-      toast.error("Error!", { description: "Image must be less than 1MB" });
-      return;
+    const validFiles = files.filter((f) => {
+      if (f.size > MAX_SIZE) {
+        toast.error(`${f.name} exceeds 2MB limit`);
+        return false;
+      }
+      return true;
+    });
+
+    const newEntries: NewImage[] = validFiles.map((file) => ({
+      source: "new" as const,
+      previewUrl: URL.createObjectURL(file),
+      storageId: null,
+      uploading: true,
+      file,
+    }));
+
+    setImages((prev) => [...prev, ...newEntries]);
+
+    for (const file of validFiles) {
+      try {
+        const uploadUrl = await generateUploadUrl();
+        const response = await fetch(uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+        if (!response.ok) throw new Error("Upload failed");
+        const result = await response.json();
+        setImages((prev) =>
+          prev.map((img) =>
+            img.source === "new" && img.file === file
+              ? { ...img, storageId: result.storageId, uploading: false }
+              : img
+          )
+        );
+      } catch {
+        toast.error(`Failed to upload ${file.name}`);
+        setImages((prev) => {
+          const entry = prev.find(
+            (img) => img.source === "new" && img.file === file
+          );
+          if (entry && entry.source === "new")
+            URL.revokeObjectURL(entry.previewUrl);
+          return prev.filter(
+            (img) => !(img.source === "new" && img.file === file)
+          );
+        });
+      }
     }
 
-    try {
-      setIsUploading(true);
-
-      const preview = URL.createObjectURL(file);
-      setPreviewUrl(preview);
-
-      const uploadUrl = await generateUploadUrl();
-
-      const response = await fetch(uploadUrl, {
-        method: "POST",
-        headers: { "Content-Type": file.type },
-        body: file,
-      });
-
-      if (!response.ok) throw new Error("Upload failed");
-      const result = await response.json();
-      setStorageId(result.storageId);
-    } catch (error) {
-      toast.error("Upload failed", { description: `${error}` });
-      setPreviewUrl(null);
-    } finally {
-      setIsUploading(false);
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  useEffect(() => {
-    return () => {
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-    };
-  }, [previewUrl]);
-
-  const handleRemoveImage = () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-    setPreviewUrl(null);
-    setStorageId(null);
+  const handleRemoveImage = (index: number) => {
+    setImages((prev) => {
+      const entry = prev[index];
+      if (entry.source === "new") URL.revokeObjectURL(entry.previewUrl);
+      return prev.filter((_, i) => i !== index);
+    });
   };
+
+  const getImageUrl = (img: ImageEntry) =>
+    img.source === "existing" ? img.url : img.previewUrl;
 
   const handlePost = async () => {
     if (!selectedNews?._id) return;
-    if (!title) return toast.error("Error!", { description: "Enter title" });
-    if (!author) return toast.error("Error!", { description: "Enter author" });
-    if (!content)
-      return toast.error("Error!", { description: "Enter content" });
+    if (!title) return toast.error("Enter a title");
+    if (!author) return toast.error("Enter an author");
+    if (!content) return toast.error("Enter content");
+    if (images.some((img) => img.source === "new" && img.uploading))
+      return toast.error("Please wait for images to finish uploading");
+
+    const storageIds = images
+      .filter(
+        (img): img is ExistingImage | (NewImage & { storageId: Id<"_storage"> }) =>
+          img.storageId !== null
+      )
+      .map((img) => img.storageId!);
 
     setPosting(true);
     try {
@@ -104,103 +170,149 @@ const UpdateNews = ({ slug }: { slug: string }) => {
         title,
         author,
         content,
-        storageId: storageId || selectedNews.storageId || undefined,
+        storageIds: storageIds.length > 0 ? storageIds : undefined,
       });
-
-      toast.success("Success!", { description: "News updated successfully" });
+      toast.success("News updated successfully");
+      setOpen(false);
     } catch (error) {
-      toast.error("Error!", { description: `${error}` });
+      toast.error("Failed to update", { description: `${error}` });
     } finally {
       setPosting(false);
-      setOpen(false);
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button variant='outline' className='w-full'>
-          Update News
+        <Button variant="outline" size="sm" className="gap-1.5">
+          <Pencil size={14} />
+          Edit
         </Button>
       </DialogTrigger>
-      <DialogContent className='max-w-2xl max-h-[calc(100vh-4rem)] flex flex-col'>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Update News</DialogTitle>
+          <DialogTitle>Edit News Article</DialogTitle>
         </DialogHeader>
-        <div className='space-y-4 overflow-y-auto flex-1 py-4'>
-          <div className='space-y-1'>
-            <label className='text-sm text-muted-foreground'>Title</label>
-            <Input
-              placeholder='News title'
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-            />
-          </div>
 
-          <div className='space-y-1'>
-            <label className='text-sm text-muted-foreground'>Author</label>
-            <Input
-              placeholder='Author name'
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-            />
-          </div>
-
-          <div className='space-y-1'>
-            <label className='text-sm text-muted-foreground'>Cover Image</label>
-            <div className='flex items-center gap-4'>
-              <input
-                type='file'
-                accept='image/*'
-                onChange={handleFileSelect}
-                ref={fileInputRef}
-                className='hidden'
-                disabled={isUploading}
+        <div className="flex-1 overflow-y-auto space-y-5 py-4 pr-1">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Title</label>
+              <Input
+                placeholder="News title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
               />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-medium">Author</label>
+              <Input
+                placeholder="Author name"
+                value={author}
+                onChange={(e) => setAuthor(e.target.value)}
+              />
+            </div>
+          </div>
+
+          {/* Images */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium">
+                Images
+                {images.length > 0 && (
+                  <span className="ml-1.5 text-muted-foreground font-normal">
+                    ({images.length} — first is cover)
+                  </span>
+                )}
+              </label>
               <Button
-                variant='outline'
-                type='button'
+                variant="outline"
+                size="sm"
+                type="button"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}>
-                <ImagePlus className='w-4 h-4 mr-2' />
-                {previewUrl ? "Change Image" : "Upload Image"}
+                disabled={posting}>
+                <ImagePlus className="w-4 h-4 mr-1.5" />
+                Add Images
               </Button>
-              {isUploading && <span className='text-sm'>Uploading...</span>}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handleFilesSelect}
+              />
             </div>
 
-            {previewUrl && (
-              <div className='relative mt-2 w-32 h-32'>
-                <Image
-                  src={previewUrl}
-                  alt='Preview'
-                  fill
-                  className='rounded-lg object-cover w-full h-full'
-                />
-                <button
-                  type='button'
-                  onClick={handleRemoveImage}
-                  className='absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1'>
-                  <X className='w-4 h-4' />
-                </button>
+            {images.length > 0 ? (
+              <div className="grid grid-cols-3 gap-2">
+                {images.map((img, i) => (
+                  <div
+                    key={i}
+                    className="relative aspect-video rounded-lg overflow-hidden border bg-muted">
+                    <Image
+                      src={getImageUrl(img)}
+                      alt={`Image ${i + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                    {img.source === "new" && img.uploading && (
+                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                        <Loader2 className="h-5 w-5 text-white animate-spin" />
+                      </div>
+                    )}
+                    {i === 0 && !(img.source === "new" && img.uploading) && (
+                      <Badge className="absolute top-1 left-1 text-[10px] py-0 px-1.5 h-5">
+                        Cover
+                      </Badge>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveImage(i)}
+                      disabled={img.source === "new" && img.uploading}
+                      className="absolute top-1 right-1 bg-black/60 hover:bg-red-500 text-white rounded-full p-0.5 transition-colors disabled:opacity-50">
+                      <X className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
               </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                className="w-full border-2 border-dashed rounded-lg p-8 flex flex-col items-center gap-2 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors">
+                <ImagePlus className="w-8 h-8" />
+                <span className="text-sm font-medium">Click to upload images</span>
+                <span className="text-xs">PNG, JPG, WEBP — up to 2MB each</span>
+              </button>
             )}
           </div>
 
-          <div className='space-y-1'>
-            <label className='text-sm text-muted-foreground'>Content</label>
-            <RichTextEditor
-              value={content}
-              onChange={(newContent) => setContent(newContent)}
-            />
+          {/* Content */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium">Content</label>
+            <RichTextEditor value={content} onChange={setContent} />
           </div>
         </div>
 
-        <DialogFooter className='gap-2 pt-4 border-t'>
-          <Button variant='outline' onClick={() => setOpen(false)}>
+        <DialogFooter className="pt-4 border-t gap-2">
+          <Button variant="outline" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button onClick={handlePost} disabled={posting}>
-            {posting ? <Minus className='animate-spin' /> : "Update"}
+          <Button
+            onClick={handlePost}
+            disabled={
+              posting ||
+              images.some((img) => img.source === "new" && img.uploading)
+            }>
+            {posting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              "Save Changes"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

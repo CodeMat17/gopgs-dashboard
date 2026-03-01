@@ -1,7 +1,7 @@
 // convex/materials.ts
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
-import { courseType, facultyType } from "./schema";
+import { courseType } from "./schema";
 
 export const getAllGPC = query({
   handler: async (ctx) => {
@@ -11,7 +11,7 @@ export const getAllGPC = query({
 
 export const getGPCByFacultyType = query({
   args: {
-    faculty: facultyType,
+    faculty: v.string(),
     type: courseType,
   },
   handler: async ({ db }, args) => {
@@ -26,7 +26,7 @@ export const getGPCByFacultyType = query({
 
 export const addGPC = mutation({
   args: {
-    faculty: facultyType,
+    faculty: v.string(),
     type: courseType, // Should match schema definition
     title: v.string(),
     description: v.string(),
@@ -48,7 +48,7 @@ export const addGPC = mutation({
 export const updateGPC = mutation({
   args: {
     id: v.id("gpc"),
-    faculty: v.optional(facultyType),
+    faculty: v.optional(v.string()),
     type: v.optional(courseType),
     title: v.optional(v.string()),
     description: v.optional(v.string()),

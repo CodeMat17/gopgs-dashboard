@@ -5,7 +5,6 @@ import DeleteNews from "@/components/news/DeleteNews";
 import UpdateNews from "@/components/news/UpdateNews";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Pagination,
@@ -21,13 +20,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { api } from "@/convex/_generated/api";
 import { useQuery } from "convex/react";
 import dayjs from "dayjs";
+import relativeTime from "dayjs/plugin/relativeTime";
 import { motion } from "framer-motion";
-import { CameraOff, Eye, Minus, X } from "lucide-react";
+import { CameraOff, Eye, Images, Search, SlidersHorizontal, User, X } from "lucide-react";
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
+
+dayjs.extend(relativeTime);
 
 type SortOption = "default" | "views_asc" | "views_desc";
 const ITEMS_PER_PAGE = 12;
@@ -36,19 +39,13 @@ export default function NewsPage() {
   const newsList = useQuery(api.news.getNewsList);
 
   const [titleSearch, setTitleSearch] = useState("");
-  const [selectedAuthor, setSelectedAuthor] = useState<string>();
+  const [selectedAuthor, setSelectedAuthor] = useState<string | undefined>();
   const [sortOrder, setSortOrder] = useState<SortOption>("default");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const { uniqueAuthors, totalPages, paginatedNews } = useMemo(() => {
+  const { uniqueAuthors, totalPages, paginatedNews, totalFiltered } = useMemo(() => {
     if (!newsList)
-      return {
-        uniqueAuthors: [],
-        uniqueTags: [],
-        totalPages: 0,
-        paginatedNews: [],
-      };
+      return { uniqueAuthors: [], totalPages: 0, paginatedNews: [], totalFiltered: 0 };
 
     const authors = Array.from(new Set(newsList.map((item) => item.author)));
 
@@ -57,7 +54,6 @@ export default function NewsPage() {
         .toLowerCase()
         .includes(titleSearch.toLowerCase());
       const matchesAuthor = !selectedAuthor || item.author === selectedAuthor;
-
       return matchesTitle && matchesAuthor;
     });
 
@@ -69,348 +65,292 @@ export default function NewsPage() {
 
     const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
     const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = startIndex + ITEMS_PER_PAGE;
-    const paginatedNews = filtered.slice(startIndex, endIndex);
+    const paginatedNews = filtered.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-    return {
-      filteredNews: filtered,
-      uniqueAuthors: authors,
-      totalPages,
-      paginatedNews,
-    };
+    return { uniqueAuthors: authors, totalPages, paginatedNews, totalFiltered: filtered.length };
   }, [newsList, titleSearch, selectedAuthor, sortOrder, currentPage]);
+
+  const hasActiveFilters = titleSearch || selectedAuthor || sortOrder !== "default";
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [titleSearch, selectedAuthor, sortOrder, selectedTags]);
+  }, [titleSearch, selectedAuthor, sortOrder]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft" && currentPage > 1) {
-        setCurrentPage((p) => p - 1);
-      } else if (e.key === "ArrowRight" && currentPage < totalPages) {
-        setCurrentPage((p) => p + 1);
-      }
+      if (e.key === "ArrowLeft" && currentPage > 1) setCurrentPage((p) => p - 1);
+      else if (e.key === "ArrowRight" && currentPage < totalPages) setCurrentPage((p) => p + 1);
     };
-
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [currentPage, totalPages]);
 
-  // const handleShare = (slug: string) => {
-  //   const url = `${window.location.origin}/news/${slug}`;
-  //   navigator.clipboard.writeText(url);
-  // };
-
-  if (newsList === undefined) {
-    return (
-      <div className='w-full min-h-96 flex items-center justify-center'>
-        <Minus className='animate-spin mr-3' /> News list Loading...
-      </div>
-    );
-  }
+  const clearFilters = () => {
+    setTitleSearch("");
+    setSelectedAuthor(undefined);
+    setSortOrder("default");
+  };
 
   return (
-    <div className='w-full min-h-screen px-4 py-12 bg-gray-50 dark:bg-gray-950'>
-      <div className='max-w-5xl mx-auto'>
-        <div className=' mb-12 flex flex-col gap-4 sm:flex-row'>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className='text-3xl sm:text-4xl font-bold text-center'>
-            Latest Updates
-          </motion.h1>
+    <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-950">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+
+        {/* Header */}
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">News & Updates</h1>
+            <p className="text-muted-foreground mt-1 text-sm">
+              {newsList === undefined
+                ? "Loading articles..."
+                : `${newsList.length} article${newsList.length !== 1 ? "s" : ""} total`}
+            </p>
+          </div>
           <CreateNews />
         </div>
 
-        {/* Filter Controls */}
-        <div className='space-y-8 mb-12'>
-          <div className='grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-2 md:gap-4'>
-            {/* Title Search */}
-            <div className='space-y-0.5'>
-              <label className='text-sm font-medium text-foreground/80'>
-                Search by Title
-              </label>
-              <div className='relative'>
-                <Input
-                  placeholder='Type to search...'
-                  value={titleSearch}
-                  onChange={(e) => setTitleSearch(e.target.value)}
-                  className='bg-background pr-10'
-                />
-                {titleSearch && (
-                  <button
-                    onClick={() => setTitleSearch("")}
-                    className='absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors'
-                    aria-label='Clear search'>
-                    <X className='h-4 w-4' />
-                  </button>
-                )}
-              </div>
+        {/* Filters */}
+        <div className="bg-white dark:bg-gray-900 border rounded-xl p-4 space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <SlidersHorizontal className="w-4 h-4" />
+            Filters
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by title..."
+                value={titleSearch}
+                onChange={(e) => setTitleSearch(e.target.value)}
+                className="pl-9 pr-9"
+              />
+              {titleSearch && (
+                <button
+                  onClick={() => setTitleSearch("")}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  <X className="h-4 w-4" />
+                </button>
+              )}
             </div>
 
-            {/* Author Filter */}
-            <div className='space-y-0.5'>
-              <label className='text-sm font-medium text-foreground/80'>
-                Filter by Author
-              </label>
-              <Select
-                value={selectedAuthor}
-                onValueChange={(value: string) =>
-                  setSelectedAuthor(value === "all" ? undefined : value)
-                }>
-                <SelectTrigger className='bg-background'>
-                  <SelectValue placeholder='All authors' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='all'>All Authors</SelectItem>
-                  {uniqueAuthors.map((author) => (
-                    <SelectItem key={author} value={author}>
-                      {author}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Select
+              value={selectedAuthor ?? "all"}
+              onValueChange={(v) => setSelectedAuthor(v === "all" ? undefined : v)}>
+              <SelectTrigger>
+                <User className="w-4 h-4 mr-2 text-muted-foreground" />
+                <SelectValue placeholder="All authors" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Authors</SelectItem>
+                {uniqueAuthors.map((author) => (
+                  <SelectItem key={author} value={author}>
+                    {author}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
 
-            {/* View Sorting */}
-            <div className='space-y-0.5'>
-              <label className='text-sm font-medium text-foreground/80'>
-                Sort by Views
-              </label>
-              <Select
-                value={sortOrder}
-                onValueChange={(value: SortOption) => setSortOrder(value)}>
-                <SelectTrigger className='bg-background'>
-                  <SelectValue placeholder='Sort order' />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value='default'>Default Order</SelectItem>
-                  <SelectItem value='views_desc'>Most Views</SelectItem>
-                  <SelectItem value='views_asc'>Fewest Views</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <Select
+              value={sortOrder}
+              onValueChange={(v) => setSortOrder(v as SortOption)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sort order" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Default Order</SelectItem>
+                <SelectItem value="views_desc">Most Views</SelectItem>
+                <SelectItem value="views_asc">Fewest Views</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Active Filters Display */}
-          {(titleSearch ||
-            selectedAuthor ||
-            selectedTags.length > 0 ||
-            sortOrder !== "default") && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className='flex flex-wrap gap-2 items-center'>
-              <Button
-                variant='ghost'
-                size='sm'
-                onClick={() => {
-                  setTitleSearch("");
-                  setSelectedAuthor(undefined);
-                  setSelectedTags([]);
-                  setSortOrder("default");
-                }}
-                className='text-destructive hover:text-destructive/80'>
-                <X className='mr-2 h-4 w-4' />
-                Clear All Filters
-              </Button>
-
+          {hasActiveFilters && (
+            <div className="flex items-center gap-2 flex-wrap pt-1">
+              <span className="text-xs text-muted-foreground">
+                {totalFiltered} result{totalFiltered !== 1 ? "s" : ""}
+              </span>
               {titleSearch && (
-                <Badge variant='outline' className='px-3 py-1'>
-                  Title: {titleSearch}
-                  <X
-                    className='ml-2 h-3 w-3 cursor-pointer'
-                    onClick={() => setTitleSearch("")}
-                  />
+                <Badge variant="secondary" className="gap-1 text-xs">
+                  &ldquo;{titleSearch}&rdquo;
+                  <button onClick={() => setTitleSearch("")}>
+                    <X className="h-3 w-3" />
+                  </button>
                 </Badge>
               )}
-
               {selectedAuthor && (
-                <Badge variant='outline' className='px-3 py-1'>
-                  Author: {selectedAuthor}
-                  <X
-                    className='ml-2 h-3 w-3 cursor-pointer'
-                    onClick={() => setSelectedAuthor(undefined)}
-                  />
+                <Badge variant="secondary" className="gap-1 text-xs">
+                  {selectedAuthor}
+                  <button onClick={() => setSelectedAuthor(undefined)}>
+                    <X className="h-3 w-3" />
+                  </button>
                 </Badge>
               )}
-
-              {selectedTags.map((tag) => (
-                <Badge key={tag} variant='outline' className='px-3 py-1'>
-                  {tag}
-                  <X
-                    className='ml-2 h-3 w-3 cursor-pointer'
-                    onClick={() =>
-                      setSelectedTags(selectedTags.filter((t) => t !== tag))
-                    }
-                  />
-                </Badge>
-              ))}
-
               {sortOrder !== "default" && (
-                <Badge variant='outline' className='px-3 py-1'>
-                  Sort:{" "}
+                <Badge variant="secondary" className="gap-1 text-xs">
                   {sortOrder === "views_desc" ? "Most Views" : "Fewest Views"}
-                  <X
-                    className='ml-2 h-3 w-3 cursor-pointer'
-                    onClick={() => setSortOrder("default")}
-                  />
+                  <button onClick={() => setSortOrder("default")}>
+                    <X className="h-3 w-3" />
+                  </button>
                 </Badge>
               )}
-            </motion.div>
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 text-xs px-2 text-destructive hover:text-destructive">
+                Clear all
+              </Button>
+            </div>
           )}
         </div>
 
-        {/* News Grid */}
-        <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
-          {paginatedNews.length > 0 ? (
-            paginatedNews.map((news, index) => (
+        {/* Grid */}
+        {newsList === undefined ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="rounded-xl overflow-hidden border bg-white dark:bg-gray-900">
+                <Skeleton className="aspect-video w-full" />
+                <div className="p-4 space-y-2">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-3 w-1/2" />
+                  <Skeleton className="h-8 w-full mt-3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : paginatedNews.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-muted-foreground gap-3">
+            <Search className="w-10 h-10 opacity-30" />
+            <p className="font-medium">No articles found</p>
+            {hasActiveFilters && (
+              <Button variant="outline" size="sm" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            )}
+          </div>
+        ) : (
+          <motion.div
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}>
+            {paginatedNews.map((news, index) => (
               <motion.div
                 key={news._id}
-                initial={{ opacity: 0, y: 50 }}
+                initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}>
-                <Card className='group h-full flex flex-col overflow-hidden transition-all duration-300 shadow-md hover:shadow-lg hover:border-primary/20 dark:bg-gray-900'>
+                transition={{ delay: index * 0.05 }}
+                className="group bg-white dark:bg-gray-900 rounded-xl border overflow-hidden flex flex-col hover:shadow-md transition-shadow duration-200">
+
+                {/* Image */}
+                <div className="relative aspect-video overflow-hidden bg-muted">
                   {news.coverImage ? (
-                    <div className='relative aspect-video overflow-hidden'>
+                    <>
                       <Image
                         src={news.coverImage}
                         alt={news.title}
                         fill
-                        className='object-cover transition-transform duration-500 group-hover:scale-105'
-                        sizes='(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw'
-                        placeholder='blur'
-                        blurDataURL='data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+yHgAFWAJ/R8xlVwAAAABJRU5ErkJggg=='
+                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        placeholder="blur"
+                        blurDataURL="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+P+yHgAFWAJ/R8xlVwAAAABJRU5ErkJggg=="
                       />
-                      <div className='absolute inset-0 bg-gradient-to-t from-black/70 to-transparent ' />
-                      {/* Always visible author section */}
-                      <div className='absolute bottom-10 left-4 right-4 text-white'>
-                        <div className='flex items-center gap-2 '>
-                          {/* <span className='w-8 h-8 bg-gray-500/70 rounded-full flex items-center justify-center text-white shrink-0 border border-gray-500'>
-                            By
-                          </span> */}
-                          <p className='text-sm leading-4'>{news.author}</p>
-                        </div>
-                      </div>
-                      <div className='absolute bottom-4 left-4 right-4 flex items-center gap-2 text-white'>
-                        <Eye className='h-4 w-4' />
-                        <span className='text-xs'>{news.views}</span>
-                      </div>
-                    </div>
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    </>
                   ) : (
-                    <div className='relative aspect-video overflow-hidden bg-gradient-to-br from-primary/10 to-muted/50'>
-                      <div className='absolute inset-0 flex items-center justify-center gap-2 text-muted-foreground text-sm'>
-                        <CameraOff className='w-6 h-6' />
-                        <span className='font-medium'>No Image Available</span>
-                      </div>
-                      {/* Always visible author section */}
-                      <div className='absolute bottom-10 left-4 right-4'>
-                        <div className='flex items-center gap-2 text-white'>
-                          {/* <span className='w-8 h-8 bg-gray-500/70 rounded-full flex items-center justify-center text-white shrink-0 border border-gray-500'>
-                            By
-                          </span> */}
-                          <p className='text-sm text-gray-800 dark:text-gray-400 leading-4'>
-                            {news.author}
-                          </p>
-                        </div>
-                      </div>
-                      <div className='absolute bottom-4 left-4 right-4 flex items-center gap-2 text-gray-800 dark:text-gray-400 '>
-                        <Eye className='h-4 w-4' />
-                        <span className='text-xs'>{news.views}</span>
-                      </div>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <CameraOff className="w-7 h-7 opacity-40" />
+                      <span className="text-xs opacity-60">No image</span>
                     </div>
                   )}
 
-                  <div className='flex-1 px-4 pb-2 pt-2 flex flex-col'>
-                    <span className='text-xs text-muted-foreground'>
-                      Published{" "}
-                      {dayjs(news._creationTime).format(
-                        "MMM DD, YYYY | h: mm a"
+                  {/* Image count badge */}
+                  {news.images && news.images.length > 1 && (
+                    <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/60 text-white text-xs px-2 py-0.5 rounded-full">
+                      <Images className="w-3 h-3" />
+                      {news.images.length}
+                    </div>
+                  )}
+
+                  {/* Views */}
+                  {news.coverImage && (
+                    <div className="absolute bottom-2 left-3 flex items-center gap-1.5 text-white/90 text-xs">
+                      <Eye className="w-3.5 h-3.5" />
+                      {news.views.toLocaleString()}
+                    </div>
+                  )}
+                </div>
+
+                {/* Body */}
+                <div className="flex-1 flex flex-col p-4 gap-3">
+                  <div className="space-y-1 flex-1">
+                    <h2 className="font-semibold text-base leading-snug line-clamp-2">
+                      {news.title}
+                    </h2>
+                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <span className="flex items-center gap-1">
+                        <User className="w-3 h-3" />
+                        {news.author}
+                      </span>
+                      {!news.coverImage && (
+                        <span className="flex items-center gap-1">
+                          <Eye className="w-3 h-3" />
+                          {news.views.toLocaleString()}
+                        </span>
                       )}
-                    </span>
-                    <span className='text-xs text-muted-foreground'>
-                      Updated{" "}
-                      {news.updatedOn
-                        ? dayjs(news.updatedOn).format(
-                            "MMM DD, YYYY | h:mm a"
-                          )
-                        : "- (Not Yet)"}
-                    </span>
-
-                    <div className='space-y-2'>
-                      <h2 className='text-lg font-semibold line-clamp-2 leading-6 py-1'>
-                        {news.title}
-                      </h2>
-
-                      <div className='flex gap-6 border-t pt-3 pb-2'>
-                        <DeleteNews id={news._id} title={news.title} />
-                        {news.slug && <UpdateNews slug={news.slug} />}
-                      </div>
                     </div>
                   </div>
-                </Card>
-              </motion.div>
-            ))
-          ) : (
-            <div className='col-span-full text-center py-12'>
-              <p className='text-muted-foreground'>
-                No articles found matching your criteria
-              </p>
-            </div>
-          )}
-        </div>
 
-        {/* Shadcn Pagination */}
+                  <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-2">
+                    <span title={dayjs(news._creationTime).format("MMM DD, YYYY h:mm a")}>
+                      {dayjs(news._creationTime).fromNow()}
+                    </span>
+                    {news.updatedOn && (
+                      <span
+                        className="text-[11px]"
+                        title={dayjs(news.updatedOn).format("MMM DD, YYYY h:mm a")}>
+                        edited {dayjs(news.updatedOn).fromNow()}
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="flex gap-2">
+                    <DeleteNews id={news._id} title={news.title} />
+                    {news.slug && <UpdateNews slug={news.slug} />}
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+
+        {/* Pagination */}
         {totalPages > 1 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className='mt-12'>
+          <div className="flex items-center justify-center gap-4 pt-4">
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
                   <PaginationPrevious
-                    href='#'
+                    href="#"
                     onClick={(e) => {
                       e.preventDefault();
-                      if (currentPage > 1) {
-                        setCurrentPage(currentPage - 1);
-                      }
+                      if (currentPage > 1) setCurrentPage((p) => p - 1);
                     }}
-                    className={
-                      currentPage === 1
-                        ? "opacity-50 cursor-not-allowed pointer-events-none"
-                        : ""
-                    }
+                    className={currentPage === 1 ? "opacity-40 pointer-events-none" : ""}
                   />
                 </PaginationItem>
-
                 <PaginationItem>
-                  <div className='flex items-center px-4 h-10 text-sm font-medium'>
-                    Page {currentPage} of {totalPages}
-                  </div>
+                  <span className="px-4 py-2 text-sm text-muted-foreground">
+                    {currentPage} / {totalPages}
+                  </span>
                 </PaginationItem>
-
                 <PaginationItem>
                   <PaginationNext
-                    href='#'
+                    href="#"
                     onClick={(e) => {
                       e.preventDefault();
-                      if (currentPage < totalPages) {
-                        setCurrentPage(currentPage + 1);
-                      }
+                      if (currentPage < totalPages) setCurrentPage((p) => p + 1);
                     }}
-                    className={
-                      currentPage === totalPages
-                        ? "opacity-50 cursor-not-allowed pointer-events-none"
-                        : ""
-                    }
+                    className={currentPage === totalPages ? "opacity-40 pointer-events-none" : ""}
                   />
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
-          </motion.div>
+          </div>
         )}
       </div>
     </div>

@@ -20,32 +20,23 @@ import {
 } from "@/components/ui/select";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
-import { useMutation } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { Loader2, Plus } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { RichTextEditor } from "../RichTextEditor";
 
-const validFaculties = [
-  "Faculty of Arts",
-  "Faculty of Education",
-  "Faculty of Mgt. & Social Sciences",
-  "Faculty of Nat. Science & Environmental Studies",
-  "Faculty of Law",
-] as const;
-
 const validCourseLevels = ["pgd", "masters", "phd"] as const;
 const durationOptions = ["12 Months", "18 Months", "24 Months", "30 Months", "36 Months"];
 const modeOptions = ["On-line", "On-campus", "On-line & On-campus"];
 
-type Faculty = (typeof validFaculties)[number];
 type CourseLevel = (typeof validCourseLevels)[number];
 type WhyChooseItem = { title: string; description: string };
 
 type UpdateCourseProps = {
   id: Id<"courses">;
   c_course: string;
-  c_faculty: Faculty;
+  c_faculty: string;
   c_duration: string;
   c_type: CourseLevel;
   c_mode: string;
@@ -64,7 +55,7 @@ const UpdateCourse = ({
   c_whyChoose,
 }: UpdateCourseProps) => {
   const [open, setOpen] = useState(false);
-  const [faculty, setFaculty] = useState<Faculty>(c_faculty);
+  const [faculty, setFaculty] = useState<string>(c_faculty);
   const [type, setType] = useState<CourseLevel>(c_type);
   const [course, setCourse] = useState(c_course);
   const [duration, setDuration] = useState(c_duration);
@@ -74,6 +65,7 @@ const UpdateCourse = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const updateCourse = useMutation(api.courses.updateCourse);
+  const faculties = useQuery(api.faculties.getFaculties);
 
   // Sync state with props when they change
   useEffect(() => {
@@ -170,15 +162,15 @@ const UpdateCourse = ({
               <label className='block font-medium'>Faculty</label>
               <Select
                 value={faculty}
-                onValueChange={(value) => setFaculty(value as Faculty)}
+                onValueChange={setFaculty}
                 disabled={isLoading}>
                 <SelectTrigger>
                   <SelectValue placeholder='Select faculty' />
                 </SelectTrigger>
                 <SelectContent className='bg-gray-200 dark:bg-gray-700'>
-                  {validFaculties.map((f) => (
-                    <SelectItem key={f} value={f} className='py-2'>
-                      {f}
+                  {faculties?.map((f) => (
+                    <SelectItem key={f._id} value={f.name} className='py-2'>
+                      {f.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
