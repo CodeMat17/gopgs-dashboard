@@ -270,4 +270,28 @@ export default defineSchema({
   faculties: defineTable({
     name: v.string(),
   }).index("by_name", ["name"]),
+
+  postgradPen: defineTable({
+    title: v.string(),
+    slug: v.string(),
+    content: v.string(),
+    author: v.string(),
+    category: v.optional(v.string()),
+    views: v.number(),
+    updatedOn: v.optional(v.number()),
+  }).index("by_slug", ["slug"]),
+
+  postgradSpotlight: defineTable({
+    name: v.string(),
+    program: v.string(),
+    faculty: v.string(),
+    bio: v.string(),
+    achievement: v.optional(v.string()),
+    photos: v.array(
+      v.object({
+        url: v.string(),
+        storageId: v.id("_storage"),
+      })
+    ),
+  }),
 });
