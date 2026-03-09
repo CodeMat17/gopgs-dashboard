@@ -202,9 +202,15 @@ export default function PostgradPenPage() {
                       <p className="text-sm text-muted-foreground font-medium">{s.program}</p>
                     </div>
 
-                    <p className="text-sm leading-relaxed text-muted-foreground flex-1">
-                      {s.bio}
-                    </p>
+                    <div
+                      className="text-sm leading-relaxed text-muted-foreground flex-1 space-y-3"
+                      dangerouslySetInnerHTML={{
+                        __html: s.bio
+                          .split(/\n\n+/)
+                          .map((p) => `<p>${p.replace(/\n/g, "<br/>")}</p>`)
+                          .join(""),
+                      }}
+                    />
 
                     {s.achievement && (
                       <blockquote className="border-l-4 border-amber-400 pl-4 py-1 italic text-sm text-muted-foreground">
