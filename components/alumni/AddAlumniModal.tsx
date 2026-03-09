@@ -169,6 +169,7 @@ export default function AddAlumniModal({
     }
 
     if (
+      formData.linkedin &&
       !/^https:\/\/(www\.)?linkedin\.com\/in\/[a-zA-Z0-9-_.]+$/.test(
         formData.linkedin
       )
@@ -322,11 +323,10 @@ export default function AddAlumniModal({
               required
             />
             <InputField
-              label='LinkedIn Profile'
+              label='LinkedIn Profile (optional)'
               name='linkedin'
               value={formData.linkedin}
               onChange={handleChange}
-              required
             />
 
             <div className='space-y-0.5'>

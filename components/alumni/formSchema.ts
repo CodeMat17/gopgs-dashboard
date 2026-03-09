@@ -6,7 +6,7 @@ export const AlumniFormSchema = z.object({
   degree: z.string(),
   currentPosition: z.string(),
   testimonial: z.string(),
-  linkedin: z.string().url("Invalid LinkedIn URL"),
+  linkedin: z.string().url("Invalid LinkedIn URL").optional().or(z.literal("")),
   company: z.string(),
   graduatedOn: z.string(),
   photo: z.string().optional(),
