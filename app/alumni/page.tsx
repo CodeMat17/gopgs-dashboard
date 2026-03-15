@@ -275,11 +275,11 @@ export default function AlumniPage() {
                             asChild
                             className=''>
                             <a
-                              href={`https://wa.me/${alumnus.email}`}
+                              href={`mailto:${alumnus.email}`}
                               target='_blank'
                               rel='noopener noreferrer'
                               className='text-4xl'
-                              aria-label='Chat on WhatsApp'>
+                              aria-label='Send Email'>
                               <Mail className='w-8 h-8' />
                               Email
                             </a>

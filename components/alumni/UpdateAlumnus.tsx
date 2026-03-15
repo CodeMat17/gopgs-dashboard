@@ -117,7 +117,7 @@ export function UpdateAlumnus({
       return;
     }
 
-    if (!isValidLinkedIn(formData.linkedin)) {
+    if (!isValidLinkedIn(formData.linkedin ?? "")) {
       toast.error("Error!", {
         description: "LinkedIn URL must start with https://linkedin.com/in/",
       });
@@ -250,7 +250,7 @@ export function UpdateAlumnus({
                 </label>
                 <Input
                   name='linkedin'
-                  value={formData.linkedin}
+                  value={formData.linkedin ?? ""}
                   onChange={handleChange}
                   placeholder='https://linkedin.com/in/yourname'
                 />
