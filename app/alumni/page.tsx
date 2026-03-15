@@ -101,7 +101,7 @@ export default function AlumniPage() {
         degree: values.degree,
         currentPosition: values.currentPosition,
         testimonial: values.testimonial,
-        linkedin: values.linkedin,
+        linkedin: values.linkedin ?? "",
         company: values.company,
         graduatedOn: values.graduatedOn,
         photo: values.photo,
