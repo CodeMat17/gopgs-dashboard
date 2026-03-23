@@ -296,11 +296,14 @@ export default function NewsPage() {
                   </div>
 
                   <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-2">
-                    <span title={dayjs(news._creationTime).format("MMM DD, YYYY h:mm a")}>
+                    <span
+                      suppressHydrationWarning
+                      title={dayjs(news._creationTime).format("MMM DD, YYYY h:mm a")}>
                       {dayjs(news._creationTime).fromNow()}
                     </span>
                     {news.updatedOn && (
                       <span
+                        suppressHydrationWarning
                         className="text-[11px]"
                         title={dayjs(news.updatedOn).format("MMM DD, YYYY h:mm a")}>
                         edited {dayjs(news.updatedOn).fromNow()}
