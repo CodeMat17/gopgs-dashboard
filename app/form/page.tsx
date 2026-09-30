@@ -4,13 +4,15 @@ import { RichTextEditor } from "@/components/RichTextEditor";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
+import { useCloudinaryUpload } from "@/lib/useCloudinaryUpload";
 import { useMutation } from "convex/react";
 import Image from "next/image";
 import { FormEvent, useRef, useState } from "react";
 
 const FormPage = () => {
-  const generateUploadUrl = useMutation(api.staff.generateUploadUrl);
+  const uploadImage = useCloudinaryUpload();
   const sendStaffData = useMutation(api.staff.createStaff);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const imageInput = useRef<HTMLInputElement>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
@@ -98,32 +100,23 @@ const FormPage = () => {
 
   const handleSendData = async (e: FormEvent) => {
     e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      // Upload the photo to Cloudinary, then save the staff record
+      const image = await uploadImage(selectedImage!, "staff");
+      await sendStaffData({ image, name, email, role, linkedin, profile });
 
-    // Step 1: Get a short-lived upload URL
-    const postUrl = await generateUploadUrl();
-
-    // Step 2: POST the file to the URL
-    const result = await fetch(postUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": selectedImage!.type,
-      },
-      body: selectedImage,
-    });
-
-    const { storageId } = await result.json();
-
-    // Step 3: Save the newly allocated storage id, name, and email to the database
-    await sendStaffData({ storageId, name, email, role });
-
-    // Clear the selected image and reset the input
-    setSelectedImage(null);
-    imageInput.current!.value = "";
-    setName("");
-    setRole("");
-    setEmail("");
-    setLinkedin("");
-    setProfile("");
+      // Clear the selected image and reset the input
+      setSelectedImage(null);
+      imageInput.current!.value = "";
+      setName("");
+      setRole("");
+      setEmail("");
+      setLinkedin("");
+      setProfile("");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -254,6 +247,8 @@ const FormPage = () => {
               !email.trim() ||
               !profile.trim()
             }
+            loading={isSubmitting}
+            loadingText='Submitting...'
             className='w-full'>
             Submit
           </Button>

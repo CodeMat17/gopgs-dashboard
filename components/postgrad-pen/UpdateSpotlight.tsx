@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
+import { CloudinaryImage, useCloudinaryUpload } from "@/lib/useCloudinaryUpload";
 import { useMutation } from "convex/react";
 import { ImagePlus, Loader2, Pencil, X } from "lucide-react";
 import Image from "next/image";
@@ -20,16 +21,16 @@ import { useRef, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "../ui/badge";
 
+// Already saved on the spotlight; the backend matches these by url.
 type ExistingPhoto = {
   source: "existing";
   url: string;
-  storageId?: Id<"_storage">;
 };
 
 type NewPhoto = {
   source: "new";
   previewUrl: string;
-  storageId: Id<"_storage"> | null;
+  image: CloudinaryImage | null;
   uploading: boolean;
   file: File;
 };
@@ -45,12 +46,12 @@ type SpotlightData = {
   faculty: string;
   bio: string;
   achievement?: string;
-  photos: { url: string; storageId?: Id<"_storage"> }[];
+  photos: { url: string }[];
 };
 
 const UpdateSpotlight = ({ spotlight }: { spotlight: SpotlightData }) => {
   const updateSpotlight = useMutation(api.postgradPen.updateSpotlight);
-  const generateUploadUrl = useMutation(api.postgradPen.generateUploadUrl);
+  const uploadImage = useCloudinaryUpload();
 
   const [open, setOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,7 +65,6 @@ const UpdateSpotlight = ({ spotlight }: { spotlight: SpotlightData }) => {
     spotlight.photos.map((p) => ({
       source: "existing" as const,
       url: p.url,
-      storageId: p.storageId,
     }))
   );
   const [posting, setPosting] = useState(false);
@@ -84,7 +84,7 @@ const UpdateSpotlight = ({ spotlight }: { spotlight: SpotlightData }) => {
     const newEntries: NewPhoto[] = validFiles.map((file) => ({
       source: "new" as const,
       previewUrl: URL.createObjectURL(file),
-      storageId: null,
+      image: null,
       uploading: true,
       file,
     }));
@@ -93,18 +93,11 @@ const UpdateSpotlight = ({ spotlight }: { spotlight: SpotlightData }) => {
 
     for (const file of validFiles) {
       try {
-        const uploadUrl = await generateUploadUrl();
-        const response = await fetch(uploadUrl, {
-          method: "POST",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-        if (!response.ok) throw new Error("Upload failed");
-        const result = await response.json();
+        const image = await uploadImage(file, "spotlight");
         setPhotos((prev) =>
           prev.map((p) =>
             p.source === "new" && p.file === file
-              ? { ...p, storageId: result.storageId, uploading: false }
+              ? { ...p, image, uploading: false }
               : p
           )
         );
@@ -141,11 +134,10 @@ const UpdateSpotlight = ({ spotlight }: { spotlight: SpotlightData }) => {
     if (photos.some((p) => p.source === "new" && p.uploading))
       return toast.error("Please wait for photos to finish uploading");
 
-    const storageIds = photos
-      .filter((p): p is ExistingPhoto | (NewPhoto & { storageId: Id<"_storage"> }) =>
-        p.storageId != null
-      )
-      .map((p) => p.storageId!);
+    // The full list in display order; removed photos are deleted by the backend.
+    const photoList = photos.flatMap((p) =>
+      p.source === "existing" ? [{ url: p.url }] : p.image ? [p.image] : []
+    );
 
     setPosting(true);
     try {
@@ -156,7 +148,7 @@ const UpdateSpotlight = ({ spotlight }: { spotlight: SpotlightData }) => {
         faculty,
         bio,
         achievement: achievement || undefined,
-        storageIds,
+        photos: photoList,
       });
       toast.success("Spotlight updated");
       setOpen(false);

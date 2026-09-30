@@ -1,6 +1,7 @@
 "use client";
 
-import { Doc, Id } from "@/convex/_generated/dataModel";
+import { Doc } from "@/convex/_generated/dataModel";
+import { CloudinaryImage, useCloudinaryUpload } from "@/lib/useCloudinaryUpload";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import Image from "next/image";
@@ -9,8 +10,8 @@ import { RichTextEditor } from "../RichTextEditor";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { StaffFormValues } from "./formSchema";
-import { useMutation } from "convex/react";
-import { api } from "@/convex/_generated/api";
+import { toast } from "sonner";
+import { errorMessage } from "@/lib/utils";
 
 interface UpdateStaffProps {
   open: boolean;
@@ -29,13 +30,15 @@ export function UpdateStaff({
   staff,
   // imageUrl,
 }: UpdateStaffProps) {
-  const generateUploadUrl = useMutation(api.staff.generateUploadUrl);
+  const uploadImage = useCloudinaryUpload();
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     staff.imageUrl || null
   );
   const imageInput = useRef<HTMLInputElement | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [removeImage, setRemoveImage] = useState(false);
 
   const [formData, setFormData] = useState({
     name: staff?.name || "",
@@ -43,8 +46,6 @@ export function UpdateStaff({
     email: staff?.email || "",
     linkedin: staff?.linkedin || "",
     profile: staff?.profile || "",
-    body: staff?.body || "",
-    imageUrl: staff?.imageUrl || "",
   });
 
   useEffect(() => {
@@ -64,8 +65,6 @@ export function UpdateStaff({
         email: staff.email || "",
         linkedin: staff.linkedin || "",
         profile: staff.profile || "",
-        imageUrl: staff?.imageUrl || "",
-        body: staff.body || "",
       });
       setPreviewUrl(staff.imageUrl || null);
     }
@@ -83,42 +82,34 @@ export function UpdateStaff({
     if (file) {
       setSelectedImage(file);
       setPreviewUrl(URL.createObjectURL(file));
+      setRemoveImage(false);
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    console.log("Submitting Form Data:", formData); // Debugging step
-
-    let updatedBody = formData.body;
+    // Only send an image for a newly picked photo; the backend keeps the
+    // current one otherwise.
+    let image: CloudinaryImage | undefined;
 
     if (selectedImage) {
       try {
-        const uploadUrl = await generateUploadUrl();
-
-        const response = await fetch(uploadUrl, {
-          method: "POST",
-          body: selectedImage,
-        });
-
-        if (!response.ok) {
-          throw new Error("Image upload failed");
-        }
-
-        const { storageId }: { storageId: Id<"_storage"> } =
-          await response.json();
-        updatedBody = storageId;
+        setIsUploading(true);
+        image = await uploadImage(selectedImage, "staff");
       } catch (error) {
         console.error("Upload failed:", error);
+        toast.error("Image upload failed", { description: errorMessage(error) });
         return;
+      } finally {
+        setIsUploading(false);
       }
     }
 
     onSubmit({
       ...formData,
-      linkedin: formData.linkedin,
-      storageId: updatedBody,
+      image,
+      removeImage: !image && removeImage,
     });
   };
 
@@ -208,29 +199,49 @@ export function UpdateStaff({
                   <button
                     type='button'
                     onClick={() => imageInput.current?.click()}
-                    className='px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition'
-                    disabled={selectedImage !== null}>
-                    {selectedImage ? "Change Image" : "Upload Image"}
+                    className='px-4 py-2 bg-blue-600 text-white rounded-lg shadow-md hover:bg-blue-700 transition'>
+                    {previewUrl ? "Change Image" : "Upload Image"}
                   </button>
+                  {removeImage && (
+                    <div className='flex items-center gap-2 text-sm text-muted-foreground'>
+                      Photo will be removed when you save.
+                      <button
+                        type='button'
+                        onClick={() => {
+                          setRemoveImage(false);
+                          setPreviewUrl(staff.imageUrl || null);
+                        }}
+                        className='text-blue-600 hover:underline'>
+                        Undo
+                      </button>
+                    </div>
+                  )}
                   {previewUrl && (
                     <div className='mt-2 flex flex-col items-center gap-2'>
                       <Image
                         priority
                         src={previewUrl}
                         alt='Preview'
-                        width={80}
-                        height={80}
+                        unoptimized
+                        width={160}
+                        height={160}
                         className='w-40 h-40 rounded-lg object-cover border'
                       />
                       <button
                         type='button'
                         onClick={() => {
-                          setSelectedImage(null);
-                          setPreviewUrl(staff.imageUrl || null);
                           if (imageInput.current) imageInput.current.value = "";
+                          if (selectedImage) {
+                            // Discard the newly picked file, back to the saved photo.
+                            setSelectedImage(null);
+                            setPreviewUrl(staff.imageUrl || null);
+                          } else {
+                            setRemoveImage(true);
+                            setPreviewUrl(null);
+                          }
                         }}
                         className='text-red-500 hover:text-red-700 text-sm'>
-                        Remove
+                        {selectedImage ? "Discard new photo" : "Remove photo"}
                       </button>
                     </div>
                   )}
@@ -241,14 +252,17 @@ export function UpdateStaff({
                 <Button
                   variant='outline'
                   className='w-full'
-                  onClick={() => onOpenChange(false)}>
+                  onClick={() => onOpenChange(false)}
+                  type="button"
+                  disabled={isUploading || isSubmitting}>
                   Cancel
                 </Button>
                 <Button
                   type='submit'
                   className='w-full'
-                  disabled={isSubmitting}>
-                  {isSubmitting ? "Updating..." : "Save Changes"}
+                  loading={isUploading || isSubmitting}
+                  loadingText={isUploading ? "Uploading image..." : "Updating..."}>
+                  Save Changes
                 </Button>
               </div>
             </form>

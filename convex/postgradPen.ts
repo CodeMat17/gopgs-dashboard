@@ -1,7 +1,14 @@
 import { v } from "convex/values";
 import sanitizeHtml from "sanitize-html";
 import { generateSlug } from "../lib/slugUtils";
+import { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import {
+  deleteOrphanedPhotos,
+  galleryPhoto,
+  removedPhotos,
+  resolveGallery,
+} from "./cloudinary";
 
 // ── Writings ──────────────────────────────────────────────────────────────────
 
@@ -115,16 +122,11 @@ export const addSpotlight = mutation({
     faculty: v.string(),
     bio: v.string(),
     achievement: v.optional(v.string()),
-    storageIds: v.array(v.id("_storage")),
+    // Cloudinary photos.
+    photos: v.array(galleryPhoto),
   },
   handler: async (ctx, args) => {
-    const photos = await Promise.all(
-      args.storageIds.map(async (storageId) => {
-        const url = await ctx.storage.getUrl(storageId);
-        if (!url) throw new Error("Failed to resolve photo URL");
-        return { url, storageId };
-      })
-    );
+    if (args.photos.length === 0) throw new Error("At least one photo is required");
 
     return await ctx.db.insert("postgradSpotlight", {
       name: args.name,
@@ -132,7 +134,7 @@ export const addSpotlight = mutation({
       faculty: args.faculty,
       bio: args.bio,
       achievement: args.achievement,
-      photos,
+      photos: resolveGallery(args.photos, [], "spotlight"),
     });
   },
 });
@@ -145,43 +147,40 @@ export const updateSpotlight = mutation({
     faculty: v.optional(v.string()),
     bio: v.optional(v.string()),
     achievement: v.optional(v.string()),
-    storageIds: v.optional(v.array(v.id("_storage"))),
+    // The full photo list after editing. Existing photos are matched by url;
+    // new ones must be Cloudinary uploads.
+    photos: v.optional(v.array(galleryPhoto)),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.id);
     if (!existing) throw new Error("Spotlight not found");
 
-    const patch: Record<string, unknown> = {};
+    const patch: Partial<Doc<"postgradSpotlight">> = {};
     if (args.name !== undefined) patch.name = args.name;
     if (args.program !== undefined) patch.program = args.program;
     if (args.faculty !== undefined) patch.faculty = args.faculty;
     if (args.bio !== undefined) patch.bio = args.bio;
     if (args.achievement !== undefined) patch.achievement = args.achievement;
 
-    if (args.storageIds && args.storageIds.length > 0) {
-      const photos = await Promise.all(
-        args.storageIds.map(async (storageId) => {
-          const url = await ctx.storage.getUrl(storageId);
-          if (!url) throw new Error("Failed to resolve photo URL");
-          return { url, storageId };
-        })
-      );
-      patch.photos = photos;
+    if (args.photos !== undefined) {
+      if (args.photos.length === 0) throw new Error("At least one photo is required");
+      patch.photos = resolveGallery(args.photos, existing.photos, "spotlight");
     }
 
     await ctx.db.patch(args.id, patch);
+
+    if (patch.photos) {
+      await deleteOrphanedPhotos(ctx, removedPhotos(existing.photos, patch.photos));
+    }
   },
 });
 
 export const deleteSpotlight = mutation({
   args: { id: v.id("postgradSpotlight") },
   handler: async (ctx, { id }) => {
+    const existing = await ctx.db.get(id);
+    if (!existing) return;
     await ctx.db.delete(id);
-  },
-});
-
-export const generateUploadUrl = mutation({
-  handler: async (ctx) => {
-    return await ctx.storage.generateUploadUrl();
+    await deleteOrphanedPhotos(ctx, existing.photos);
   },
 });

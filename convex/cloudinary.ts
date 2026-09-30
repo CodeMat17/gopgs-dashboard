@@ -2,8 +2,10 @@
 // Photos live on Cloudinary; Convex only stores their URL + public_id.
 // Requires these Convex env vars (npx convex env set NAME value):
 //   CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET
-import { v } from "convex/values";
-import { action, internalAction } from "./_generated/server";
+import { Infer, v } from "convex/values";
+import { internal } from "./_generated/api";
+import { Id } from "./_generated/dataModel";
+import { action, internalAction, MutationCtx } from "./_generated/server";
 
 export const FOLDERS = {
   news: "go-pgs/news",
@@ -119,3 +121,99 @@ export const deleteImages = internalAction({
 /** Cloudinary public_ids a set of photos owns, for cleanup when they change. */
 export const publicIdsOf = (images?: { publicId?: string }[]) =>
   (images ?? []).flatMap((img) => (img.publicId ? [img.publicId] : []));
+
+/** A photo in a gallery: Cloudinary-hosted, or a legacy Convex file. */
+export const galleryPhoto = v.object({
+  url: v.string(),
+  publicId: v.optional(v.string()),
+  storageId: v.optional(v.id("_storage")),
+});
+export type GalleryPhoto = Infer<typeof galleryPhoto>;
+
+/**
+ * Throws unless `image` is hosted on this app's Cloudinary account. The public_id
+ * isn't checked against FOLDERS: accounts in dynamic-folder mode don't prefix it
+ * with the upload folder.
+ */
+export function assertCloudinaryImage(
+  image: { url: string; publicId: string },
+  folder: keyof typeof FOLDERS,
+) {
+  const { cloudName } = config();
+  if (
+    !image.url.startsWith(`https://res.cloudinary.com/${cloudName}/`) ||
+    !image.url.includes(image.publicId)
+  ) {
+    throw new Error(`Not a Cloudinary ${folder} photo from this account: ${image.url}`);
+  }
+}
+
+/**
+ * Validates the photo list sent by the admin UI for a gallery: new photos must
+ * be Cloudinary uploads, anything else must already be on the document.
+ */
+function checkGallery(
+  next: GalleryPhoto[],
+  existing: GalleryPhoto[] | undefined,
+  folder: keyof typeof FOLDERS,
+) {
+  const known = new Set((existing ?? []).map((p) => p.url));
+  for (const photo of next) {
+    if (known.has(photo.url)) continue;
+    if (!photo.publicId || photo.storageId) {
+      throw new Error(`Unknown photo: ${photo.url}`);
+    }
+    assertCloudinaryImage({ url: photo.url, publicId: photo.publicId }, folder);
+  }
+}
+
+/**
+ * The photo list to store: new Cloudinary uploads as sent, existing photos
+ * copied from the document so the client can't rewrite their ids.
+ */
+export function resolveGallery(
+  sent: GalleryPhoto[],
+  existing: GalleryPhoto[],
+  folder: keyof typeof FOLDERS,
+): GalleryPhoto[] {
+  checkGallery(sent, existing, folder);
+  const byUrl = new Map(existing.map((p) => [p.url, p]));
+  return sent.map((p) => byUrl.get(p.url) ?? { url: p.url, publicId: p.publicId });
+}
+
+/** Files (Cloudinary or Convex storage) a photo record owns. */
+type OwnedFiles = { publicId?: string; storageId?: string };
+
+/**
+ * Deletes photos that a document no longer references. Call after the patch or
+ * delete. Cloudinary deletes run in a scheduled action; Convex files go now.
+ */
+export async function deleteOrphanedPhotos(
+  ctx: MutationCtx,
+  removed: (OwnedFiles | undefined)[],
+) {
+  const publicIds = new Set<string>();
+  const storageIds = new Set<string>();
+  for (const photo of removed) {
+    if (photo?.publicId) publicIds.add(photo.publicId);
+    if (photo?.storageId) storageIds.add(photo.storageId);
+  }
+  for (const storageId of storageIds) {
+    try {
+      await ctx.storage.delete(storageId as Id<"_storage">);
+    } catch (err) {
+      console.error(`Could not delete Convex file ${storageId}`, err);
+    }
+  }
+  if (publicIds.size > 0) {
+    await ctx.scheduler.runAfter(0, internal.cloudinary.deleteImages, {
+      publicIds: [...publicIds],
+    });
+  }
+}
+
+/** Photos in `before` whose url is not in `after`. */
+export const removedPhotos = (before: GalleryPhoto[] = [], after: GalleryPhoto[] = []) => {
+  const kept = new Set(after.map((p) => p.url));
+  return before.filter((p) => !kept.has(p.url));
+};

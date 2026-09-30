@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
+import { CloudinaryImage, useCloudinaryUpload } from "@/lib/useCloudinaryUpload";
 import { useMutation, useQuery } from "convex/react";
 import { ImagePlus, Loader2, Pencil, X } from "lucide-react";
 import Image from "next/image";
@@ -20,16 +20,16 @@ import { toast } from "sonner";
 import { RichTextEditor } from "../RichTextEditor";
 import { Badge } from "../ui/badge";
 
+// Already saved on the news item; the backend matches these by url.
 type ExistingImage = {
   source: "existing";
   url: string;
-  storageId?: Id<"_storage">;
 };
 
 type NewImage = {
   source: "new";
   previewUrl: string;
-  storageId: Id<"_storage"> | null;
+  image: CloudinaryImage | null;
   uploading: boolean;
   file: File;
 };
@@ -41,7 +41,7 @@ const MAX_SIZE = 2 * 1024 * 1024;
 const UpdateNews = ({ slug }: { slug: string }) => {
   const selectedNews = useQuery(api.news.getNewsBySlug, { slug });
   const updateNews = useMutation(api.news.updateNews);
-  const generateUploadUrl = useMutation(api.news.generateUploadUrl);
+  const uploadImage = useCloudinaryUpload();
 
   const [open, setOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -63,17 +63,11 @@ const UpdateNews = ({ slug }: { slug: string }) => {
           selectedNews.images.map((img) => ({
             source: "existing" as const,
             url: img.url,
-            storageId: img.storageId,
           }))
         );
-      } else if (selectedNews.storageId && selectedNews.coverImage) {
-        setImages([
-          {
-            source: "existing" as const,
-            url: selectedNews.coverImage,
-            storageId: selectedNews.storageId,
-          },
-        ]);
+      } else if (selectedNews.coverImage) {
+        // Older items only have a single cover image.
+        setImages([{ source: "existing" as const, url: selectedNews.coverImage }]);
       } else {
         setImages([]);
       }
@@ -95,7 +89,7 @@ const UpdateNews = ({ slug }: { slug: string }) => {
     const newEntries: NewImage[] = validFiles.map((file) => ({
       source: "new" as const,
       previewUrl: URL.createObjectURL(file),
-      storageId: null,
+      image: null,
       uploading: true,
       file,
     }));
@@ -104,18 +98,11 @@ const UpdateNews = ({ slug }: { slug: string }) => {
 
     for (const file of validFiles) {
       try {
-        const uploadUrl = await generateUploadUrl();
-        const response = await fetch(uploadUrl, {
-          method: "POST",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-        if (!response.ok) throw new Error("Upload failed");
-        const result = await response.json();
+        const image = await uploadImage(file, "news");
         setImages((prev) =>
           prev.map((img) =>
             img.source === "new" && img.file === file
-              ? { ...img, storageId: result.storageId, uploading: false }
+              ? { ...img, image, uploading: false }
               : img
           )
         );
@@ -156,12 +143,11 @@ const UpdateNews = ({ slug }: { slug: string }) => {
     if (images.some((img) => img.source === "new" && img.uploading))
       return toast.error("Please wait for images to finish uploading");
 
-    const storageIds = images
-      .filter(
-        (img): img is ExistingImage | (NewImage & { storageId: Id<"_storage"> }) =>
-          img.storageId != null
-      )
-      .map((img) => img.storageId!);
+    // The full list in display order (first is the cover); removed photos are
+    // deleted by the backend.
+    const imageList = images.flatMap((img) =>
+      img.source === "existing" ? [{ url: img.url }] : img.image ? [img.image] : []
+    );
 
     setPosting(true);
     try {
@@ -170,7 +156,7 @@ const UpdateNews = ({ slug }: { slug: string }) => {
         title,
         author,
         content,
-        storageIds: storageIds.length > 0 ? storageIds : undefined,
+        images: imageList,
       });
       toast.success("News updated successfully");
       setOpen(false);

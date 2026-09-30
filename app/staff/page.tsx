@@ -9,10 +9,11 @@ import { api } from "@/convex/_generated/api";
 import { Doc, Id } from "@/convex/_generated/dataModel";
 import { useMutation, useQuery } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Linkedin, Mail, Minus, Plus } from "lucide-react";
+import { Linkedin, Mail, Minus, Plus, UserRound } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/utils";
 
 export default function StaffPage() {
   const staffMembers = useQuery(api.staff.getStaff);
@@ -21,31 +22,15 @@ export default function StaffPage() {
   const [isCreating, setIsCreating] = useState(false);
 
   // Mutations
-  const createMutation = useMutation(api.staff.createStaff);
   const updateMutation = useMutation(api.staff.updateStaff);
   const deleteMutation = useMutation(api.staff.deleteStaff);
-
-  const handleCreate = async (values: StaffFormValues) => {
-    try {
-      await createMutation({
-        name: values.name,
-        role: values.role,
-        email: values.email,
-        profile: values.profile,
-        linkedin: values.linkedin,
-        storageId: values.storageId as Id<"_storage">,
-      });
-      toast.success("Staff member created successfully");
-      setIsCreating(false);
-    } catch (error) {
-      toast.error("Failed to create staff member");
-      console.error("Creation error:", error);
-    }
-  };
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleUpdate = async (values: StaffFormValues) => {
     if (!selectedStaff) return;
 
+    setIsUpdating(true);
     try {
       await updateMutation({
         id: selectedStaff._id,
@@ -54,9 +39,8 @@ export default function StaffPage() {
         email: values.email,
         linkedin: values.linkedin || undefined,
         profile: values.profile || undefined,
-        storageId: values.storageId
-          ? (values.storageId as Id<"_storage">)
-          : undefined,
+        image: values.image,
+        removeImage: values.removeImage,
       });
 
       setSelectedStaff(null);
@@ -64,20 +48,29 @@ export default function StaffPage() {
         description: "Staff member updated successfully",
       });
     } catch (error) {
-      toast.error("Error!", { description: "Failed to update staff member" });
+      toast.error("Failed to update staff member", {
+        description: errorMessage(error),
+      });
       console.error("Update error:", error);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   const handleDelete = async () => {
     if (!deleteStaffId) return;
+    setIsDeleting(true);
     try {
       await deleteMutation({ id: deleteStaffId });
       setDeleteStaffId(null);
       toast.success("Staff member deleted successfully");
     } catch (error) {
-      toast.error("Failed to delete staff member");
+      toast.error("Failed to delete staff member", {
+        description: errorMessage(error),
+      });
       console.error("Delete error:", error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -113,13 +106,19 @@ export default function StaffPage() {
                 transition={{ duration: 0.2 }}>
                 <Card className='hover:shadow-lg transition-shadow rounded-lg overflow-hidden group relative'>
                   <div className='relative w-full aspect-square'>
-                    <Image
-                      alt={member.name}
-                      src={member.imageUrl || "/default-image.png"} // Ensure fallback image
-                      fill
-                      className='object-cover'
-                      sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw'
-                    />
+                    {member.imageUrl ? (
+                      <Image
+                        alt={member.name}
+                        src={member.imageUrl}
+                        fill
+                        className='object-cover'
+                        sizes='(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw'
+                      />
+                    ) : (
+                      <div className='absolute inset-0 flex items-center justify-center bg-muted'>
+                        <UserRound className='w-16 h-16 text-muted-foreground' />
+                      </div>
+                    )}
                     <div className='absolute inset-0 bg-gradient-to-t from-black/60 to-transparent' />
                   </div>
 
@@ -176,8 +175,6 @@ export default function StaffPage() {
       <CreateStaff
         open={isCreating}
         onOpenChange={setIsCreating}
-        onSubmit={handleCreate}
-        isSubmitting={false}
       />
 
       {/* Update Staff Modal */}
@@ -187,7 +184,7 @@ export default function StaffPage() {
           open={!!selectedStaff}
           onOpenChange={(open) => !open && setSelectedStaff(null)}
           onSubmit={handleUpdate}
-          isSubmitting={false}
+          isSubmitting={isUpdating}
           staff={selectedStaff}
         />
       )}
@@ -197,7 +194,7 @@ export default function StaffPage() {
         open={!!deleteStaffId}
         onOpenChange={(open) => !open && setDeleteStaffId(null)}
         onConfirm={handleDelete}
-        isDeleting={false}
+        isDeleting={isDeleting}
       />
     </div>
   );

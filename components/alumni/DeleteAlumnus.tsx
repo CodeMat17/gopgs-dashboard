@@ -27,14 +27,18 @@ export function DeleteAlumnus({
         <div className='space-y-4'>
           <p>Are you sure you want to delete this alumnus?</p>
           <div className='flex justify-end gap-4'>
-            <Button variant='outline' onClick={() => onOpenChange(false)}>
+            <Button
+              variant='outline'
+              onClick={() => onOpenChange(false)}
+              disabled={isDeleting}>
               Cancel
             </Button>
             <Button
               variant='destructive'
               onClick={onConfirm}
-              disabled={isDeleting}>
-              {isDeleting ? "Deleting..." : "Delete"}
+              loading={isDeleting}
+              loadingText='Deleting...'>
+              Delete
             </Button>
           </div>
         </div>

@@ -1,7 +1,25 @@
 // convex/news.ts
 import { v } from "convex/values";
-import { Id } from "./_generated/dataModel";
+import { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import {
+  deleteOrphanedPhotos,
+  galleryPhoto,
+  GalleryPhoto,
+  removedPhotos,
+  resolveGallery,
+} from "./cloudinary";
+
+/** A news item's photos, including the legacy single-cover shape. */
+const photosOf = (news: Doc<"news">): GalleryPhoto[] =>
+  news.images ??
+  (news.coverImage
+    ? [{ url: news.coverImage, storageId: news.storageId }]
+    : []);
+
+// Legacy cover file some old items keep outside `images`.
+const legacyCover = (news: Doc<"news">) =>
+  news.images && news.storageId ? [{ storageId: news.storageId }] : [];
 
 export const getNewsList = query({
   handler: async (ctx) => {
@@ -48,7 +66,13 @@ export const incrementViews = mutation({
 export const deleteNews = mutation({
   args: { id: v.id("news") },
   handler: async (ctx, { id }) => {
+    const existing = await ctx.db.get(id);
+    if (!existing) return;
     await ctx.db.delete(id);
+    await deleteOrphanedPhotos(ctx, [
+      ...photosOf(existing),
+      ...legacyCover(existing),
+    ]);
   },
 });
 
@@ -57,7 +81,8 @@ export const addNews = mutation({
     title: v.string(),
     author: v.string(),
     content: v.string(),
-    storageIds: v.optional(v.array(v.id("_storage"))),
+    // Cloudinary photos, first is the cover.
+    images: v.array(galleryPhoto),
   },
   handler: async (ctx, args) => {
     const slug = args.title
@@ -66,25 +91,14 @@ export const addNews = mutation({
       .replace(/^-+|-+$/g, "")
       .slice(0, 60);
 
-    // Resolve all storageIds to URLs
-    const images: { url: string; storageId: Id<"_storage"> }[] = [];
-    if (args.storageIds && args.storageIds.length > 0) {
-      for (const storageId of args.storageIds) {
-        const url = await ctx.storage.getUrl(storageId);
-        if (url) {
-          images.push({ url, storageId });
-        }
-      }
-    }
-
-    const coverImage = images.length > 0 ? images[0].url : "";
+    const images = resolveGallery(args.images, [], "news");
 
     await ctx.db.insert("news", {
       title: args.title,
       slug,
       author: args.author,
       content: args.content,
-      coverImage,
+      coverImage: images[0]?.url ?? "",
       images: images.length > 0 ? images : undefined,
       views: 0,
     });
@@ -97,7 +111,9 @@ export const updateNews = mutation({
     title: v.string(),
     author: v.string(),
     content: v.string(),
-    storageIds: v.optional(v.array(v.id("_storage"))),
+    // The full photo list after editing, first is the cover. Existing photos
+    // are matched by url; new ones must be Cloudinary uploads.
+    images: v.array(galleryPhoto),
   },
   handler: async (ctx, args) => {
     const existing = await ctx.db.get(args.id);
@@ -105,37 +121,24 @@ export const updateNews = mutation({
       throw new Error("News item not found");
     }
 
-    // Resolve new images if provided, otherwise keep existing
-    let images = existing.images;
-    let coverImage = existing.coverImage;
+    const before = photosOf(existing);
+    const images = resolveGallery(args.images, before, "news");
 
-    if (args.storageIds && args.storageIds.length > 0) {
-      const resolved: { url: string; storageId: Id<"_storage"> }[] = [];
-      for (const storageId of args.storageIds) {
-        const url = await ctx.storage.getUrl(storageId);
-        if (url) {
-          resolved.push({ url, storageId });
-        }
-      }
-      if (resolved.length > 0) {
-        images = resolved;
-        coverImage = resolved[0].url;
-      }
-    }
-
+    // Patching a field to undefined removes it from the document.
     await ctx.db.patch(args.id, {
       title: args.title,
       author: args.author,
       content: args.content,
-      coverImage,
-      images,
+      coverImage: images[0]?.url ?? "",
+      images: images.length > 0 ? images : undefined,
+      storageId: undefined,
       updatedOn: new Date().toISOString(),
     });
-  },
-});
 
-export const generateUploadUrl = mutation({
-  handler: async (ctx) => {
-    return await ctx.storage.generateUploadUrl();
+    const stillUsed = new Set(images.map((p) => p.storageId));
+    await deleteOrphanedPhotos(ctx, [
+      ...removedPhotos(before, images),
+      ...legacyCover(existing).filter((f) => !stillUsed.has(f.storageId)),
+    ]);
   },
 });

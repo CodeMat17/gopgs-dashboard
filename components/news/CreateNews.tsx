@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
+import { CloudinaryImage, useCloudinaryUpload } from "@/lib/useCloudinaryUpload";
 import { useMutation } from "convex/react";
 import { ImagePlus, Loader2, Plus, X } from "lucide-react";
 import Image from "next/image";
@@ -22,7 +22,7 @@ import { Badge } from "../ui/badge";
 
 type ImageEntry = {
   previewUrl: string;
-  storageId: Id<"_storage"> | null;
+  image: CloudinaryImage | null;
   uploading: boolean;
   file: File;
 };
@@ -31,7 +31,7 @@ const MAX_SIZE = 2 * 1024 * 1024; // 2MB
 
 const CreateNews = () => {
   const createNews = useMutation(api.news.addNews);
-  const generateUploadUrl = useMutation(api.news.generateUploadUrl);
+  const uploadImage = useCloudinaryUpload();
   const [open, setOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -55,7 +55,7 @@ const CreateNews = () => {
 
     const newEntries: ImageEntry[] = validFiles.map((file) => ({
       previewUrl: URL.createObjectURL(file),
-      storageId: null,
+      image: null,
       uploading: true,
       file,
     }));
@@ -64,18 +64,11 @@ const CreateNews = () => {
 
     for (const file of validFiles) {
       try {
-        const uploadUrl = await generateUploadUrl();
-        const response = await fetch(uploadUrl, {
-          method: "POST",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-        if (!response.ok) throw new Error("Upload failed");
-        const result = await response.json();
+        const image = await uploadImage(file, "news");
         setImages((prev) =>
           prev.map((img) =>
             img.file === file
-              ? { ...img, storageId: result.storageId, uploading: false }
+              ? { ...img, image, uploading: false }
               : img
           )
         );
@@ -115,9 +108,7 @@ const CreateNews = () => {
     if (images.some((img) => img.uploading))
       return toast.error("Please wait for images to finish uploading");
 
-    const storageIds = images
-      .filter((img) => img.storageId !== null)
-      .map((img) => img.storageId!);
+    const uploaded = images.flatMap((img) => (img.image ? [img.image] : []));
 
     setPosting(true);
     try {
@@ -125,7 +116,7 @@ const CreateNews = () => {
         title,
         author,
         content,
-        storageIds: storageIds.length > 0 ? storageIds : undefined,
+        images: uploaded,
       });
       toast.success("News published successfully");
       resetForm();

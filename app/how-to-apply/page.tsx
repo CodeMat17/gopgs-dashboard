@@ -91,8 +91,9 @@ const HowToApply = () => {
           <Button
             className='px-12'
             onClick={handleUpdate}
-            disabled={isUploading}>
-            {isUploading ? "Updating..." : "Update"}
+            loading={isUploading}
+            loadingText='Updating...'>
+            Update
           </Button>
         </div>
       </div>

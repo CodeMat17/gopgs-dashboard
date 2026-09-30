@@ -31,6 +31,7 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { FaWhatsapp } from "react-icons/fa";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/utils";
 // import Image from "next/image";
 
 export default function AlumniPage() {
@@ -46,6 +47,8 @@ export default function AlumniPage() {
   // Mutations
   const updateMutation = useMutation(api.alumni.updateAlumnus);
   const deleteMutation = useMutation(api.alumni.deleteAlumnus);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const uniqueYears = Array.from(
     new Set(alumni.map((alumnus) => alumnus.graduatedOn))
@@ -94,6 +97,7 @@ export default function AlumniPage() {
   const handleUpdate = async (values: AlumniFormValues) => {
     if (!selectedAlumnus) return;
 
+    setIsUpdating(true);
     try {
       await updateMutation({
         id: selectedAlumnus._id,
@@ -104,12 +108,9 @@ export default function AlumniPage() {
         linkedin: values.linkedin ?? "",
         company: values.company,
         graduatedOn: values.graduatedOn,
-        photo: values.photo,
         tel: values.tel,
         email: values.email,
-        storageId: values.storageId
-          ? (values.storageId as Id<"_storage">)
-          : undefined,
+        image: values.image,
       });
 
       setSelectedAlumnus(null);
@@ -117,20 +118,29 @@ export default function AlumniPage() {
         description: "Alumnus updated successfully",
       });
     } catch (error) {
-      toast.error("Error!", { description: "Failed to update Alumnus" });
+      toast.error("Failed to update alumnus", {
+        description: errorMessage(error),
+      });
       console.error("Update error:", error);
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   const handleDelete = async () => {
     if (!deleteAlumnusId) return;
+    setIsDeleting(true);
     try {
       await deleteMutation({ id: deleteAlumnusId });
       setDeleteAlumnusId(null);
       toast.success("Alumnus deleted successfully");
     } catch (error) {
-      toast.error("Failed to delete Alumnus");
+      toast.error("Failed to delete alumnus", {
+        description: errorMessage(error),
+      });
       console.error("Delete error:", error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -353,7 +363,7 @@ export default function AlumniPage() {
           open={!!selectedAlumnus}
           onOpenChange={(open) => !open && setSelectedAlumnus(null)}
           onSubmit={handleUpdate}
-          isSubmitting={false}
+          isSubmitting={isUpdating}
           alumni={selectedAlumnus}
         />
       )}
@@ -363,7 +373,7 @@ export default function AlumniPage() {
         open={!!deleteAlumnusId}
         onOpenChange={(open) => !open && setDeleteAlumnusId(null)}
         onConfirm={handleDelete}
-        isDeleting={false}
+        isDeleting={isDeleting}
       />
     </div>
   );

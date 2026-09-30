@@ -305,8 +305,9 @@ export default function RequirementsPage() {
                   </Button>
                   <Button
                     onClick={() => handleUpdate(req._id)}
-                    disabled={loading[req._id]}>
-                    {loading[req._id] ? "Saving..." : "Save Changes"}
+                    loading={loading[req._id]}
+                    loadingText='Saving...'>
+                    Save Changes
                   </Button>
                 </div>
               </Card>
@@ -351,8 +352,9 @@ export default function RequirementsPage() {
                 <div className='flex gap-2'>
                   <Button
                     onClick={() => handleUpdateOtherRoutes(others._id)}
-                    disabled={loading[others._id]}>
-                    {loading[others._id] ? "Updating..." : "Update"}
+                    loading={loading[others._id]}
+                    loadingText='Updating...'>
+                    Update
                   </Button>
                   <Button
                     variant='destructive'

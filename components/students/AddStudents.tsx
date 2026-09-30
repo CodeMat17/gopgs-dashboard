@@ -234,8 +234,12 @@ export default function AddStudents() {
               </div>
             </div>
 
-            <Button type='submit' className='w-full' disabled={isSubmitting}>
-              {isSubmitting ? "Registering..." : "Register Student"}
+            <Button
+              type='submit'
+              className='w-full'
+              loading={isSubmitting}
+              loadingText='Registering...'>
+              Register Student
             </Button>
           </form>
         </div>

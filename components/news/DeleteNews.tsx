@@ -12,7 +12,6 @@ import {
 import { api } from "@/convex/_generated/api";
 import { Id } from "@/convex/_generated/dataModel";
 import { useMutation } from "convex/react";
-import { Minus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
@@ -55,11 +54,15 @@ const DeleteNews = ({ id, title }: { id: Id<"news">; title: string }) => {
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className='flex gap-2'>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={() => setOpen(false)} disabled={deleting}>
+            Cancel
+          </Button>
           <Button
             onClick={handleDelete}
+            loading={deleting}
+            loadingText='Deleting...'
             className='bg-red-500 hover:bg-red-700 text-white'>
-            {deleting ? <Minus className='animate-spin' /> : "Delete"}
+            Delete
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -3,24 +3,23 @@
 import { RichTextEditor } from "@/components/RichTextEditor";
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
+import { useCloudinaryUpload } from "@/lib/useCloudinaryUpload";
 import { useMutation } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import Image from "next/image";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import { Button } from "../ui/button";
-import { StaffFormValues } from "./formSchema";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/utils";
 
 type CreateStaffProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit?: (values: StaffFormValues) => Promise<void>;
-  isSubmitting: boolean;
 };
 
 export function CreateStaff({ open, onOpenChange }: CreateStaffProps) {
-  const generateUploadUrl = useMutation(api.staff.generateUploadUrl);
+  const uploadImage = useCloudinaryUpload();
   const sendStaffData = useMutation(api.staff.createStaff);
 
   const imageInput = useRef<HTMLInputElement>(null);
@@ -150,18 +149,9 @@ export function CreateStaff({ open, onOpenChange }: CreateStaffProps) {
     }
 
     try {
-      const postUrl = await generateUploadUrl();
-      const result = await fetch(postUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": selectedImage!.type,
-        },
-        body: selectedImage,
-      });
+      const image = await uploadImage(selectedImage!, "staff");
 
-      const { storageId } = await result.json();
-
-      await sendStaffData({ storageId, name, email, role, linkedin, profile });
+      await sendStaffData({ image, name, email, role, linkedin, profile });
 
       toast('Done!', {
         description: 'Staff added successfully'
@@ -181,7 +171,7 @@ export function CreateStaff({ open, onOpenChange }: CreateStaffProps) {
       onOpenChange(false);
     } catch (error)
     {
-      toast.error("An error occurred while submitting.");
+      toast.error("Failed to add staff member", { description: errorMessage(error) });
       setError("An error occurred while submitting.");
       console.log("Error occurred while submitting data: ", error);
     } finally {
@@ -315,14 +305,17 @@ export function CreateStaff({ open, onOpenChange }: CreateStaffProps) {
                     <Button
                       variant='outline'
                       className='w-full'
-                      onClick={() => onOpenChange(false)}>
+                      onClick={() => onOpenChange(false)}
+                      type='button'
+                      disabled={isSubmitting}>
                       Close
                     </Button>
                     <Button
                       type='submit'
-                      disabled={isSubmitting}
+                      loading={isSubmitting}
+                      loadingText='Submitting...'
                       className='w-full'>
-                      {isSubmitting ? "Submitting..." : "Submit"}
+                      Submit
                     </Button>
                   </div>
                 </div>

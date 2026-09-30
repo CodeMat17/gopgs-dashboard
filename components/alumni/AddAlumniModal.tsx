@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
+import { CloudinaryImage, useCloudinaryUpload } from "@/lib/useCloudinaryUpload";
 import { useMutation } from "convex/react";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChangeEvent, FormEvent, useEffect, useState } from "react";
@@ -26,7 +27,6 @@ interface AlumniFormData {
   company: string;
   // phone: string;
   tel: string;
-  storageId: string;
 }
 
 export default function AddAlumniModal({
@@ -44,11 +44,10 @@ export default function AddAlumniModal({
     company: "",
     // phone: "",
     tel: "",
-    storageId: "",
   });
 
   const addAlumni = useMutation(api.alumni.addAlumni);
-  const generateUploadUrl = useMutation(api.staff.generateUploadUrl);
+  const uploadImage = useCloudinaryUpload();
 
   const MAX_SIZE_MB = 1;
 
@@ -183,22 +182,12 @@ export default function AddAlumniModal({
     }
 
     try {
-      let storageId = "";
+      let image: CloudinaryImage | undefined;
 
       // Upload image first
       if (selectedImage) {
         try {
-          const uploadUrl = await generateUploadUrl();
-          const res = await fetch(uploadUrl, {
-            method: "POST",
-            headers: { "Content-Type": selectedImage.type },
-            body: selectedImage,
-          });
-
-          if (!res.ok) throw new Error("Upload failed");
-
-          const result = await res.json();
-          storageId = result.storageId;
+          image = await uploadImage(selectedImage, "alumni");
         } catch (error) {
           toast.error("Image Upload Failed", {
             description: "Could not upload image. Please try again.",
@@ -212,7 +201,7 @@ export default function AddAlumniModal({
       // Add to database after image is uploaded
       await addAlumni({
         ...formData,
-        storageId, // ✅ now populated!
+        image,
       });
 
       toast.success("Done!", { description: "Alumnus Added" });
@@ -229,7 +218,6 @@ export default function AddAlumniModal({
         company: "",
         // phone: "",
         tel: "",
-        storageId: "",
       });
       setSelectedImage(null);
     } catch (error) {
@@ -350,8 +338,12 @@ export default function AddAlumniModal({
                 className='w-full'>
                 Cancel
               </Button>
-              <Button type='submit' disabled={loading} className='w-full'>
-                {loading ? "Submitting..." : "Submit"}
+              <Button
+                type='submit'
+                loading={loading}
+                loadingText='Submitting...'
+                className='w-full'>
+                Submit
               </Button>
             </div>
           </form>

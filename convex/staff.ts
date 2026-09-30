@@ -1,6 +1,18 @@
 import { v } from "convex/values";
-import { Id } from "./_generated/dataModel";
+import { Doc } from "./_generated/dataModel";
 import { mutation, query } from "./_generated/server";
+import {
+  assertCloudinaryImage,
+  cloudinaryImage,
+  deleteOrphanedPhotos,
+} from "./cloudinary";
+
+/** Every file that holds a staff member's photo, Cloudinary or legacy Convex. */
+const photoFiles = (staff: Doc<"staff">) => [
+  { publicId: staff.imagePublicId },
+  { storageId: staff.body },
+  { storageId: staff.imageStorageId },
+];
 
 export const getStaff = query({
   handler: async (ctx) => {
@@ -8,7 +20,7 @@ export const getStaff = query({
 
     const staffWithUrls = await Promise.all(
       staff.map(async (staffMember) => {
-        // Prefer the Cloudinary copy made by imageMigration.
+        // Cloudinary photo first; Convex storage only for records not yet migrated.
         const imageUrl =
           staffMember.imagePublicId && staffMember.image
             ? staffMember.image
@@ -29,7 +41,10 @@ export const getStaff = query({
 export const deleteStaff = mutation({
   args: { id: v.id("staff") },
   handler: async (ctx, { id }) => {
+    const existing = await ctx.db.get(id);
+    if (!existing) return;
     await ctx.db.delete(id);
+    await deleteOrphanedPhotos(ctx, photoFiles(existing));
   },
 });
 
@@ -41,64 +56,51 @@ export const updateStaff = mutation({
     email: v.string(),
     linkedin: v.optional(v.string()),
     profile: v.optional(v.string()),
-    storageId: v.optional(v.id("_storage")),
+    // New Cloudinary photo; omit to keep the current one.
+    image: v.optional(cloudinaryImage),
+    // Clear the photo entirely (ignored when a new image is given).
+    removeImage: v.optional(v.boolean()),
   },
   handler: async (ctx, args) => {
-    const { id, name, role, email, linkedin, profile, storageId } = args;
+    const { id, name, role, email, linkedin, profile, image, removeImage } =
+      args;
 
-    // Fetch existing staff member
-    const existingStaff = await ctx.db.get(id);
-    if (!existingStaff) throw new Error("Staff member not found");
+    const existing = await ctx.db.get(id);
+    if (!existing) throw new Error("Staff member not found");
 
-    let imageUrl: string | null = null;
-
-    // Determine the image URL: Use new storageId if provided, otherwise use the existing one
-    const finalStorageId = storageId ?? existingStaff.body;
-    if (finalStorageId) {
-      imageUrl = await ctx.storage.getUrl(finalStorageId);
-    }
-
-    // Prepare the data to be updated
-    const updateData: {
-      name: string;
-      role: string;
-      email: string;
-      linkedin?: string;
-      profile?: string;
-      body?: Id<"_storage">;
-      imagePublicId?: undefined;
-    } = {
+    const patch: Partial<Doc<"staff">> = {
       name,
       role,
       email,
       linkedin,
       profile,
-
-      // body: finalStorageId,
     };
 
-    // Only update `body` (storageId) if a new one is provided
-    if (storageId) {
-      updateData.body = storageId;
-      // New Convex upload supersedes any Cloudinary copy.
-      updateData.imagePublicId = undefined;
+    const replacePhoto = !!image || !!removeImage;
+    if (replacePhoto) {
+      if (image) assertCloudinaryImage(image, "staff");
+      // Patching a field to undefined removes it from the document.
+      patch.image = image?.url;
+      patch.imagePublicId = image?.publicId;
+      patch.body = undefined;
+      patch.imageStorageId = undefined;
     }
 
-    // Update the staff record in the database
-    await ctx.db.patch(id, updateData);
+    await ctx.db.patch(id, patch);
 
-    // Return the updated staff record
-    return {
-      ...existingStaff,
-      ...updateData,
-      imageUrl,
-    };
+    if (replacePhoto) {
+      // Delete the old files only after nothing references them.
+      await deleteOrphanedPhotos(
+        ctx,
+        photoFiles(existing).filter((f) => f.publicId !== image?.publicId)
+      );
+    }
   },
 });
 
 export const createStaff = mutation({
   args: {
-    storageId: v.id("_storage"),
+    image: cloudinaryImage,
     name: v.string(),
     role: v.string(),
     email: v.string(),
@@ -106,8 +108,10 @@ export const createStaff = mutation({
     profile: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
+    assertCloudinaryImage(args.image, "staff");
     await ctx.db.insert("staff", {
-      body: args.storageId,
+      image: args.image.url,
+      imagePublicId: args.image.publicId,
       name: args.name,
       role: args.role,
       email: args.email,
@@ -115,11 +119,5 @@ export const createStaff = mutation({
       profile: args.profile,
       format: "image",
     });
-  },
-});
-
-export const generateUploadUrl = mutation({
-  handler: async (ctx) => {
-    return await ctx.storage.generateUploadUrl();
   },
 });

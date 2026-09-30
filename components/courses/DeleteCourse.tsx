@@ -57,12 +57,13 @@ export function DeleteCourse({
           <Button
             variant='destructive'
             onClick={handleDelete}
-            disabled={isDeleting}>
-            {isDeleting ? "Deleting..." : "Delete"}
+            loading={isDeleting}
+            loadingText='Deleting...'>
+            Delete
           </Button>
 
           <DialogClose asChild>
-            <Button>Close</Button>
+            <Button disabled={isDeleting}>Close</Button>
           </DialogClose>
         </DialogFooter>
       </DialogContent>

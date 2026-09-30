@@ -1,8 +1,7 @@
 "use client";
 
-import { api } from "@/convex/_generated/api";
-import { Doc, Id } from "@/convex/_generated/dataModel";
-import { useMutation } from "convex/react";
+import { Doc } from "@/convex/_generated/dataModel";
+import { CloudinaryImage, useCloudinaryUpload } from "@/lib/useCloudinaryUpload";
 import { AnimatePresence, motion } from "framer-motion";
 import { X } from "lucide-react";
 import Image from "next/image";
@@ -29,7 +28,7 @@ export function UpdateAlumnus({
   isSubmitting,
   alumni,
 }: UpdateAlumnusProps) {
-  const generateUploadUrl = useMutation(api.staff.generateUploadUrl);
+  const uploadImage = useCloudinaryUpload();
 
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(
@@ -48,8 +47,6 @@ export function UpdateAlumnus({
     linkedin: alumni.linkedin ?? "",
     company: alumni.company ?? "",
     graduatedOn: alumni.graduatedOn ?? "",
-    storageId: alumni.storageId ?? "",
-    photo: alumni.photo ?? "",
     tel: alumni.tel ?? "",
   });
 
@@ -74,8 +71,6 @@ export function UpdateAlumnus({
         company: alumni.company ?? "",
         graduatedOn: alumni.graduatedOn ?? "",
         tel: alumni.tel ?? "",
-        storageId: alumni.storageId ?? "",
-        photo: alumni.photo ?? "",
       });
       setPreviewUrl(alumni.photo || null);
     }
@@ -125,28 +120,19 @@ export function UpdateAlumnus({
       return;
     }
 
-    let uploadedStorageId = formData.storageId;
+    // Only send an image for a newly picked photo; the backend keeps the
+    // current one otherwise.
+    let image: CloudinaryImage | undefined;
 
     if (selectedImage) {
       try {
-        const uploadUrl = await generateUploadUrl();
-        const response = await fetch(uploadUrl, {
-          method: "POST",
-          body: selectedImage,
-        });
-
-        if (!response.ok) {
-          throw new Error("Image upload failed");
-        }
-
-        const { storageId }: { storageId: Id<"_storage"> } =
-          await response.json();
-        uploadedStorageId = storageId;
+        image = await uploadImage(selectedImage, "alumni");
       } catch (error) {
         console.error("Upload failed:", error);
         toast.error("Error!", {
           description: "Image upload failed. Try again.",
         });
+        setIsUploading(false);
         return;
       }
     }
@@ -155,7 +141,7 @@ export function UpdateAlumnus({
 
     onSubmit({
       ...formData,
-      storageId: uploadedStorageId,
+      image,
     });
   };
 
@@ -324,14 +310,16 @@ export function UpdateAlumnus({
                   variant='outline'
                   className='w-full'
                   onClick={() => onOpenChange(false)}
-                  type='button'>
+                  type="button"
+                  disabled={isUploading || isSubmitting}>
                   Cancel
                 </Button>
                 <Button
                   type='submit'
                   className='w-full'
-                  disabled={isUploading}>
-                  {isUploading ? "Updating..." : "Save Changes"}
+                  loading={isUploading || isSubmitting}
+                  loadingText={isUploading ? "Uploading image..." : "Updating..."}>
+                  Save Changes
                 </Button>
               </div>
             </form>

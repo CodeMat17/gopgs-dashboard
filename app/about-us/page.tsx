@@ -141,8 +141,9 @@ export default function AdminDashboard() {
               />
               <Button
                 onClick={() => handleUpdateMission(mission._id)}
-                disabled={loading[mission._id]}>
-                {loading[mission._id] ? "Updating..." : "Update Mission"}
+                loading={loading[mission._id]}
+                loadingText='Updating...'>
+                Update Mission
               </Button>
             </div>
           ))
@@ -178,8 +179,9 @@ export default function AdminDashboard() {
               />
               <Button
                 onClick={() => handleUpdateVision(vision._id)}
-                disabled={loading[vision._id]}>
-                {loading[vision._id] ? "Updating..." : "Update Vision"}
+                loading={loading[vision._id]}
+                loadingText='Updating...'>
+                Update Vision
               </Button>
             </div>
           ))

@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { api } from "@/convex/_generated/api";
-import { Id } from "@/convex/_generated/dataModel";
+import { CloudinaryImage, useCloudinaryUpload } from "@/lib/useCloudinaryUpload";
 import { useMutation } from "convex/react";
 import { ImagePlus, Loader2, Plus, X } from "lucide-react";
 import Image from "next/image";
@@ -21,7 +21,7 @@ import { toast } from "sonner";
 
 type PhotoEntry = {
   previewUrl: string;
-  storageId: Id<"_storage"> | null;
+  image: CloudinaryImage | null;
   uploading: boolean;
   file: File;
 };
@@ -30,7 +30,7 @@ const MAX_SIZE = 2 * 1024 * 1024;
 
 const AddSpotlight = () => {
   const addSpotlight = useMutation(api.postgradPen.addSpotlight);
-  const generateUploadUrl = useMutation(api.postgradPen.generateUploadUrl);
+  const uploadImage = useCloudinaryUpload();
 
   const [open, setOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -57,7 +57,7 @@ const AddSpotlight = () => {
 
     const newEntries: PhotoEntry[] = validFiles.map((file) => ({
       previewUrl: URL.createObjectURL(file),
-      storageId: null,
+      image: null,
       uploading: true,
       file,
     }));
@@ -66,17 +66,10 @@ const AddSpotlight = () => {
 
     for (const file of validFiles) {
       try {
-        const uploadUrl = await generateUploadUrl();
-        const response = await fetch(uploadUrl, {
-          method: "POST",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-        if (!response.ok) throw new Error("Upload failed");
-        const result = await response.json();
+        const image = await uploadImage(file, "spotlight");
         setPhotos((prev) =>
           prev.map((p) =>
-            p.file === file ? { ...p, storageId: result.storageId, uploading: false } : p
+            p.file === file ? { ...p, image, uploading: false } : p
           )
         );
       } catch {
@@ -119,9 +112,7 @@ const AddSpotlight = () => {
     if (photos.some((p) => p.uploading))
       return toast.error("Please wait for photos to finish uploading");
 
-    const storageIds = photos
-      .filter((p) => p.storageId !== null)
-      .map((p) => p.storageId!);
+    const uploaded = photos.flatMap((p) => (p.image ? [p.image] : []));
 
     setPosting(true);
     try {
@@ -131,7 +122,7 @@ const AddSpotlight = () => {
         faculty,
         bio,
         achievement: achievement || undefined,
-        storageIds,
+        photos: uploaded,
       });
       toast.success("Spotlight added");
       resetForm();

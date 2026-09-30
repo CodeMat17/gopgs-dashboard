@@ -9,11 +9,11 @@ export const AlumniFormSchema = z.object({
   linkedin: z.string().url("Invalid LinkedIn URL").optional().or(z.literal("")),
   company: z.string(),
   graduatedOn: z.string(),
-  photo: z.string().optional(),
   tel: z.string(),
   email: z.string().optional(),
   // phone: z.number(),
-  storageId: z.string(),
+  // New Cloudinary photo picked in the form; absent keeps the current one.
+  image: z.object({ url: z.string(), publicId: z.string() }).optional(),
 });
 
 export type AlumniFormValues = z.infer<typeof AlumniFormSchema>;

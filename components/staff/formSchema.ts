@@ -7,8 +7,9 @@ export const StaffFormSchema = z.object({
   email: z.string().email("Invalid email address"),
   linkedin: z.string().url("Invalid LinkedIn URL"),
   profile: z.string().optional(),
-  storageId: z.string().optional(),
-  body: z.string().optional()
+  // New Cloudinary photo picked in the form; absent keeps the current one.
+  image: z.object({ url: z.string(), publicId: z.string() }).optional(),
+  removeImage: z.boolean().optional(),
 });
 
 export type StaffFormValues = z.infer<typeof StaffFormSchema>;
