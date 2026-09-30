@@ -51,7 +51,7 @@ export default function StudentsSection() {
   );
 
   return (
-    <div className='w-full bg-slate-50 dark:bg-slate-950'>
+    <div className='w-full'>
       <section className='space-y-8 p-6 max-w-5xl mx-auto'>
         <header className='flex gap-4 justify-between'>
           <div className='space-y-2'>

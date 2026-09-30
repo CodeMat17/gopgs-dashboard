@@ -37,6 +37,7 @@ export default defineSchema({
   alumni: defineTable({
     name: v.string(),
     photo: v.optional(v.string()),
+    photoPublicId: v.optional(v.string()),
     degree: v.string(),
     year: v.optional(v.number()),
     currentPosition: v.string(),
@@ -67,6 +68,7 @@ export default defineSchema({
       })
     ),
     image: v.optional(v.string()),
+    imagePublicId: v.optional(v.string()),
   }),
 
   whyChoose: defineTable({
@@ -156,7 +158,8 @@ export default defineSchema({
       v.array(
         v.object({
           url: v.string(),
-          storageId: v.id("_storage"),
+          publicId: v.optional(v.string()),
+          storageId: v.optional(v.id("_storage")),
         })
       )
     ),
@@ -290,7 +293,8 @@ export default defineSchema({
     photos: v.array(
       v.object({
         url: v.string(),
-        storageId: v.id("_storage"),
+        publicId: v.optional(v.string()),
+        storageId: v.optional(v.id("_storage")),
       })
     ),
   }),

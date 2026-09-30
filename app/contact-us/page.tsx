@@ -1,37 +1,16 @@
-// app/contact/page.tsx
-"use client";
-import MainContact from "@/components/contact/MainContact";
-import { api } from "@/convex/_generated/api";
-import { useQuery } from "convex/react";
-import { motion } from "framer-motion";
-
-// Create type from schema
+import ContactEditor from "@/components/contact/ContactEditor";
+import { PageHeader } from "@/components/PageHeader";
+import { Mail } from "lucide-react";
 
 export default function ContactPage() {
-  const info = useQuery(api.contactUs.getContactInfo);
-
   return (
-    <div className='w-full min-h-screen max-w-3xl mx-auto px-4 pb-12'>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}>
-        <h1 className='text-4xl font-bold mb-8 text-center'>Contact Us</h1>
-
-        <div className='grid grid-cols-1 gap-8'>
-          {/* Contact Information */}
-          <div className='space-y-6'>
-            <motion.div
-              initial={{ x: -20 }}
-              animate={{ x: 0 }}
-              transition={{ delay: 0.2 }}>
-              {info?.address && (
-                <MainContact info={info as Required<typeof info>} />
-              )}
-            </motion.div>
-          </div>
-        </div>
-      </motion.div>
+    <div className='mx-auto w-full max-w-5xl space-y-6 px-4 py-6 sm:px-6 lg:py-8'>
+      <PageHeader
+        icon={Mail}
+        title='Contact Us'
+        description='Manage the address, phone numbers, emails and department contacts shown on the public website.'
+      />
+      <ContactEditor />
     </div>
   );
 }

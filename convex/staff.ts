@@ -8,9 +8,13 @@ export const getStaff = query({
 
     const staffWithUrls = await Promise.all(
       staff.map(async (staffMember) => {
-        const imageUrl = staffMember.body
-          ? await ctx.storage.getUrl(staffMember.body)
-          : null;
+        // Prefer the Cloudinary copy made by imageMigration.
+        const imageUrl =
+          staffMember.imagePublicId && staffMember.image
+            ? staffMember.image
+            : staffMember.body
+              ? await ctx.storage.getUrl(staffMember.body)
+              : null;
 
         return {
           ...staffMember,
@@ -62,6 +66,7 @@ export const updateStaff = mutation({
       linkedin?: string;
       profile?: string;
       body?: Id<"_storage">;
+      imagePublicId?: undefined;
     } = {
       name,
       role,
@@ -75,6 +80,8 @@ export const updateStaff = mutation({
     // Only update `body` (storageId) if a new one is provided
     if (storageId) {
       updateData.body = storageId;
+      // New Convex upload supersedes any Cloudinary copy.
+      updateData.imagePublicId = undefined;
     }
 
     // Update the staff record in the database

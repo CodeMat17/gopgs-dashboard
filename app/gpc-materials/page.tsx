@@ -78,7 +78,7 @@ export default function DashboardGPCMaterials() {
   const isEmpty = gpcQuery?.length === 0;
 
   return (
-    <div className='w-full bg-gray-50 dark:bg-gray-950'>
+    <div className='w-full'>
       <div className='px-4 pt-6 pb-12 space-y-8 max-w-5xl mx-auto'>
         <div className='flex gap-4 justify-between'>
           <header className='space-y-2'>

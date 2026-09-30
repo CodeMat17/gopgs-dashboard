@@ -103,6 +103,7 @@ export const updateAlumnus = mutation({
       email?: string;
       tel: string;
       storageId?: Id<"_storage">;
+      photoPublicId?: undefined;
     } = {
       name,
       degree,
@@ -122,6 +123,8 @@ export const updateAlumnus = mutation({
       updateData.storageId = storageId;
       const newPhoto = await ctx.storage.getUrl(storageId)
       updateData.photo = newPhoto ?? undefined
+      // New Convex upload supersedes any Cloudinary copy.
+      updateData.photoPublicId = undefined
     }
 
     // Update the staff record in the database

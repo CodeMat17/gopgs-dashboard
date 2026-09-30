@@ -1,149 +1,105 @@
-'use client'
+"use client";
 
-import { Briefcase, GraduationCap, Home, ListChecks, Mail, Users, Newspaper, FileText, NotebookText, BookOpen, Users2, Banknote, CalendarDays, PenLine } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
-  // SidebarGroupLabel,
+  SidebarGroupLabel,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
-import { useState } from "react";
+import { isActivePath, navGroups } from "@/lib/navigation";
+import { ExternalLink } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
-// Menu items.
-const items = [
-  {
-    title: "Home",
-    url: "/",
-    icon: Home,
-  },
-  {
-    title: "About Us",
-    url: "/about-us",
-    icon: Users,
-  },
-  {
-    title: "Requirements",
-    url: "/requirements",
-    icon: ListChecks,
-  },
-  {
-    title: "Courses",
-    url: "/courses",
-    icon: BookOpen,
-  },
-  {
-    title: "News",
-    url: "/news",
-    icon: Newspaper,
-  },
-  {
-    title: "Postgrad Pen",
-    url: "/postgrad-pen",
-    icon: PenLine,
-  },
-  {
-    title: "Staff",
-    url: "/staff",
-    icon: Briefcase,
-  },
-  {
-    title: "Alumni",
-    url: "/alumni",
-    icon: GraduationCap,
-  },
-  {
-    title: "How to apply",
-    url: "/how-to-apply",
-    icon: FileText,
-  },
-  {
-    title: "Course Materials",
-    url: "/course-materials",
-    icon: NotebookText,
-  },
-  {
-    title: "GPC Materials",
-    url: "/gpc-materials",
-    icon: NotebookText,
-  },
-  {
-    title: "Students Database",
-    url: "/pg-students",
-    icon: Users2,
-  },
-  {
-    title: "Fees",
-    url: "/fees",
-    icon: Banknote,
-  },
-  {
-    title: "Timetable",
-    url: "/timetable",
-    icon: CalendarDays,
-  },
-  {
-    title: "Contact Us",
-    url: "/contact-us",
-    icon: Mail,
-  },
-];
+const PUBLIC_SITE_URL = "https://pg.gouni.edu.ng";
 
 export function AppSidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const pathname = usePathname();
+  const { isMobile, setOpenMobile } = useSidebar();
 
-  const toggleSidebar = () => {
-    setIsCollapsed(!isCollapsed);
+  // Close the mobile drawer after navigating.
+  const handleNavigate = () => {
+    if (isMobile) setOpenMobile(false);
   };
 
   return (
-    <Sidebar
-      className={`${
-        isCollapsed ? "w-20" : "w-64"
-      } transition-all duration-300 ease-in-out`}>
+    <Sidebar collapsible='icon'>
+      <SidebarHeader className='border-b border-sidebar-border'>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size='lg' asChild tooltip='GOUNI SPGS Admin'>
+              <Link href='/' onClick={handleNavigate}>
+                <Image
+                  src='/go_logo.jpg'
+                  alt='GOUNI logo'
+                  width={32}
+                  height={32}
+                  className='size-8 shrink-0 rounded-full ring-2 ring-gold/60'
+                />
+                <div className='grid flex-1 text-left leading-tight'>
+                  <span className='truncate text-sm font-bold text-white'>
+                    GOUNI SPGS
+                  </span>
+                  <span className='truncate text-xs text-sidebar-foreground/70'>
+                    Content Management
+                  </span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+
       <SidebarContent>
-        <SidebarGroup>
-          {/* <SidebarGroupLabel asChild>
-            <div className='flex flex-col'>
-              <p
-                className={`${
-                  isCollapsed ? "hidden" : "block"
-                } text-lg font-semibold`}>
-                GO PGS Admin Dashboard
-              </p>
-            </div>
-          </SidebarGroupLabel> */}
-          <SidebarGroupContent className='mt-20'>
-            <SidebarMenu className="space-y-1 sm:space-y-0">
-              {items.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild>
-                    <a
-                      href={item.url}
-                      className={`flex items-center p-3 space-x-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-lg font-semibold ${
-                        isCollapsed ? "justify-center" : "justify-start"
-                      }`}>
-                      <item.icon size={24} className='w-8 h-8' />
-                      <span className={`${isCollapsed ? "hidden" : "block"}`}>
-                        {item.title}
-                      </span>
-                    </a>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {navGroups.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel className='text-[11px] uppercase tracking-widest text-sidebar-foreground/50'>
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActivePath(pathname, item.url)}
+                      tooltip={item.title}
+                      className='data-[active=true]:bg-gold data-[active=true]:font-semibold data-[active=true]:text-gold-foreground'>
+                      <Link href={item.url} onClick={handleNavigate}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
-      <button
-        onClick={toggleSidebar}
-        className='absolute bottom-4 right-4 p-2 bg-gray-200 dark:bg-gray-700 rounded-full hover:bg-gray-300 dark:hover:bg-gray-600'
-        aria-label='Toggle Sidebar'>
-        {isCollapsed ? ">" : "<"}
-      </button>
+
+      <SidebarFooter className='border-t border-sidebar-border'>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton asChild tooltip='View public site'>
+              <a href={PUBLIC_SITE_URL} target='_blank' rel='noopener noreferrer'>
+                <ExternalLink />
+                <span>View public site</span>
+              </a>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 }

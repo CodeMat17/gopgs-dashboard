@@ -91,7 +91,7 @@ export default function PostgradPenPage() {
   const hasActiveFilters = search || selectedCategory;
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="w-full min-h-screen">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-10 space-y-14">
 
         {/* ── Page Header ─────────────────────────────────────────────── */}

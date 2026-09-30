@@ -1069,7 +1069,7 @@ function LectureTimetableTab() {
 
 export default function TimetablePage() {
   return (
-    <div className="w-full min-h-screen bg-gray-50 dark:bg-gray-950">
+    <div className="w-full min-h-screen">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 py-10 space-y-8">
 
         <div>

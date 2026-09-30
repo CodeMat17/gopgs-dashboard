@@ -14,6 +14,23 @@ export default {
         'active-tab': '0 2px 4px -1px rgba(0, 0, 0, 0.1)',
       },
   		colors: {
+  			brand: {
+  				'50': '#f4f3fc',
+  				'100': '#e8e6f8',
+  				'200': '#d0cbf0',
+  				'300': '#aca3e2',
+  				'400': '#8276cf',
+  				'500': '#6152ba',
+  				'600': '#4d3fa0',
+  				'700': '#3d3185',
+  				'800': '#2f266b',
+  				'900': '#221c52',
+  				'950': '#130e33'
+  			},
+  			gold: {
+  				DEFAULT: 'hsl(var(--gold))',
+  				foreground: 'hsl(var(--gold-foreground))'
+  			},
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
   			card: {

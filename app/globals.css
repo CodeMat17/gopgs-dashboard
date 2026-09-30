@@ -31,162 +31,106 @@
   margin-bottom: 0.25em;
 }
 
+/* ── Design tokens ─────────────────────────────────────────────────────────
+   Mirrors the public site's GOUNI palette: deep indigo base, gold accent.
+   Values are HSL channels for shadcn/ui. */
 @layer base {
   :root {
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-}
-
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-
-    --foreground: 222.2 84% 4.9%;
+    --background: 240 20% 98%;
+    --foreground: 246 42% 12%;
 
     --card: 0 0% 100%;
-
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 246 42% 12%;
 
     --popover: 0 0% 100%;
+    --popover-foreground: 246 42% 12%;
 
-    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 248 55% 30%;
+    --primary-foreground: 0 0% 100%;
 
-    --primary: 222.2 47.4% 11.2%;
+    --secondary: 246 35% 95%;
+    --secondary-foreground: 248 45% 22%;
 
-    --primary-foreground: 210 40% 98%;
+    --muted: 246 25% 95%;
+    --muted-foreground: 246 10% 42%;
 
-    --secondary: 210 40% 96.1%;
+    --accent: 246 35% 95%;
+    --accent-foreground: 248 45% 22%;
 
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --gold: 48 100% 67%;
+    --gold-foreground: 246 45% 12%;
 
-    --muted: 210 40% 96.1%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --border: 246 20% 90%;
+    --input: 246 20% 88%;
+    --ring: 248 55% 40%;
 
-    --accent: 210 40% 96.1%;
+    --chart-1: 248 55% 40%;
+    --chart-2: 48 100% 55%;
+    --chart-3: 142 45% 38%;
+    --chart-4: 262 50% 60%;
+    --chart-5: 20 80% 58%;
 
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --radius: 0.75rem;
 
-    --destructive: 0 84.2% 60.2%;
-
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 214.3 31.8% 91.4%;
-
-    --input: 214.3 31.8% 91.4%;
-
-    --ring: 222.2 84% 4.9%;
-
-    --chart-1: 12 76% 61%;
-
-    --chart-2: 173 58% 39%;
-
-    --chart-3: 197 37% 24%;
-
-    --chart-4: 43 74% 66%;
-
-    --chart-5: 27 87% 67%;
-
-    --radius: 0.5rem;
-
-    --sidebar-background: 0 0% 98%;
-
-    --sidebar-foreground: 240 5.3% 26.1%;
-
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 248 45% 14%;
+    --sidebar-foreground: 246 20% 85%;
+    --sidebar-primary: 48 100% 67%;
+    --sidebar-primary-foreground: 246 45% 12%;
+    --sidebar-accent: 248 35% 22%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 248 30% 22%;
+    --sidebar-ring: 48 100% 67%;
   }
+
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 246 42% 6%;
+    --foreground: 240 25% 96%;
 
-    --foreground: 210 40% 98%;
+    --card: 246 36% 9%;
+    --card-foreground: 240 25% 96%;
 
-    --card: 222.2 84% 4.9%;
+    --popover: 246 36% 10%;
+    --popover-foreground: 240 25% 96%;
 
-    --card-foreground: 210 40% 98%;
+    --primary: 48 100% 67%;
+    --primary-foreground: 246 45% 10%;
 
-    --popover: 222.2 84% 4.9%;
+    --secondary: 246 30% 15%;
+    --secondary-foreground: 240 25% 96%;
 
-    --popover-foreground: 210 40% 98%;
+    --muted: 246 30% 13%;
+    --muted-foreground: 246 14% 68%;
 
-    --primary: 210 40% 98%;
+    --accent: 246 30% 16%;
+    --accent-foreground: 240 25% 96%;
 
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --gold: 48 100% 67%;
+    --gold-foreground: 246 45% 10%;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
 
-    --secondary-foreground: 210 40% 98%;
+    --border: 246 26% 18%;
+    --input: 246 26% 20%;
+    --ring: 48 100% 67%;
 
-    --muted: 217.2 32.6% 17.5%;
+    --chart-1: 248 70% 70%;
+    --chart-2: 48 100% 67%;
+    --chart-3: 142 45% 50%;
+    --chart-4: 262 60% 70%;
+    --chart-5: 20 80% 62%;
 
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-
-    --input: 217.2 32.6% 17.5%;
-
-    --ring: 212.7 26.8% 83.9%;
-
-    --chart-1: 220 70% 50%;
-
-    --chart-2: 160 60% 45%;
-
-    --chart-3: 30 80% 55%;
-
-    --chart-4: 280 65% 60%;
-
-    --chart-5: 340 75% 55%;
-
-    --sidebar-background: 240 5.9% 10%;
-
-    --sidebar-foreground: 240 4.8% 95.9%;
-
-    --sidebar-primary: 224.3 76.3% 48%;
-
-    --sidebar-primary-foreground: 0 0% 100%;
-
-    --sidebar-accent: 240 3.7% 15.9%;
-
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-
-    --sidebar-border: 240 3.7% 15.9%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 246 42% 8%;
+    --sidebar-foreground: 246 20% 80%;
+    --sidebar-primary: 48 100% 67%;
+    --sidebar-primary-foreground: 246 45% 10%;
+    --sidebar-accent: 246 30% 15%;
+    --sidebar-accent-foreground: 0 0% 100%;
+    --sidebar-border: 246 26% 16%;
+    --sidebar-ring: 48 100% 67%;
   }
 }
 
@@ -196,5 +140,25 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "kern", "liga";
+  }
+}
+
+@layer components {
+  /* Branded gradient panel used for the dashboard hero and access screen. */
+  .hero-brand {
+    @apply relative isolate overflow-hidden bg-brand-950 text-white;
+    background-image: radial-gradient(ellipse 60% 70% at 100% 0%, rgba(255, 220, 85, 0.16), transparent 60%),
+      radial-gradient(ellipse 60% 80% at 0% 100%, rgba(97, 82, 186, 0.35), transparent 60%),
+      linear-gradient(135deg, #221c52 0%, #130e33 55%, #0b0822 100%);
+  }
+  .hero-brand::before {
+    content: "";
+    @apply pointer-events-none absolute inset-0 -z-10 opacity-50;
+    background-image: linear-gradient(to right, rgb(255 255 255 / 0.06) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
+    -webkit-mask-image: radial-gradient(ellipse at center, black 30%, transparent 75%);
   }
 }
