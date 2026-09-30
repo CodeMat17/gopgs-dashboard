@@ -23,7 +23,7 @@ import { Badge } from "../ui/badge";
 type ExistingPhoto = {
   source: "existing";
   url: string;
-  storageId: Id<"_storage">;
+  storageId?: Id<"_storage">;
 };
 
 type NewPhoto = {
@@ -45,7 +45,7 @@ type SpotlightData = {
   faculty: string;
   bio: string;
   achievement?: string;
-  photos: { url: string; storageId: Id<"_storage"> }[];
+  photos: { url: string; storageId?: Id<"_storage"> }[];
 };
 
 const UpdateSpotlight = ({ spotlight }: { spotlight: SpotlightData }) => {
@@ -143,7 +143,7 @@ const UpdateSpotlight = ({ spotlight }: { spotlight: SpotlightData }) => {
 
     const storageIds = photos
       .filter((p): p is ExistingPhoto | (NewPhoto & { storageId: Id<"_storage"> }) =>
-        p.storageId !== null
+        p.storageId != null
       )
       .map((p) => p.storageId!);
 

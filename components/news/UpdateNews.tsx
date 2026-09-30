@@ -23,7 +23,7 @@ import { Badge } from "../ui/badge";
 type ExistingImage = {
   source: "existing";
   url: string;
-  storageId: Id<"_storage">;
+  storageId?: Id<"_storage">;
 };
 
 type NewImage = {
@@ -159,7 +159,7 @@ const UpdateNews = ({ slug }: { slug: string }) => {
     const storageIds = images
       .filter(
         (img): img is ExistingImage | (NewImage & { storageId: Id<"_storage"> }) =>
-          img.storageId !== null
+          img.storageId != null
       )
       .map((img) => img.storageId!);
 
