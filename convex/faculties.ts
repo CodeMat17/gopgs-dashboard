@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { revalidateSite } from "./revalidate";
 
 export const getFaculties = query({
   handler: async (ctx) => {
@@ -20,7 +21,9 @@ export const addFaculty = mutation({
 
     if (existing) throw new Error("Faculty already exists");
 
-    return await ctx.db.insert("faculties", { name: trimmed });
+    const id = await ctx.db.insert("faculties", { name: trimmed });
+    await revalidateSite(ctx, ["faculties"]);
+    return id;
   },
 });
 
@@ -28,5 +31,6 @@ export const deleteFaculty = mutation({
   args: { id: v.id("faculties") },
   handler: async (ctx, { id }) => {
     await ctx.db.delete(id);
+    await revalidateSite(ctx, ["faculties"]);
   },
 });

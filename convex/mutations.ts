@@ -1,5 +1,6 @@
 import { mutation } from "./_generated/server";
 import { v } from "convex/values";
+import { revalidateSite } from "./revalidate";
 
 export const updateMission = mutation({
   args: {
@@ -9,6 +10,7 @@ export const updateMission = mutation({
   },
   async handler(ctx, { _id, title, desc }) {
     await ctx.db.patch(_id, { title, desc });
+    await revalidateSite(ctx, ["mission"]);
   },
 });
 
@@ -20,6 +22,7 @@ export const updateVision = mutation({
   },
   async handler(ctx, { _id, title, desc }) {
     await ctx.db.patch(_id, { title, desc });
+    await revalidateSite(ctx, ["vision"]);
   },
 });
 

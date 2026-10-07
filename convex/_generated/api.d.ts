@@ -35,6 +35,7 @@ import type * as news from "../news.js";
 import type * as postgradPen from "../postgradPen.js";
 import type * as programs from "../programs.js";
 import type * as requirements from "../requirements.js";
+import type * as revalidate from "../revalidate.js";
 import type * as staff from "../staff.js";
 import type * as students from "../students.js";
 import type * as timetable from "../timetable.js";
@@ -71,6 +72,7 @@ declare const fullApi: ApiFromModules<{
   postgradPen: typeof postgradPen;
   programs: typeof programs;
   requirements: typeof requirements;
+  revalidate: typeof revalidate;
   staff: typeof staff;
   students: typeof students;
   timetable: typeof timetable;

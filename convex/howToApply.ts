@@ -1,5 +1,6 @@
 import { v } from "convex/values";
 import { mutation, query } from "./_generated/server";
+import { revalidateSite } from "./revalidate";
 
 export const getAll = query({
   handler: async (ctx) => {
@@ -18,5 +19,6 @@ export const updateHowToApply = mutation({
       text: args.text,
       link: args.link,
     });
+    await revalidateSite(ctx, ["how-to-apply"]);
   },
 });

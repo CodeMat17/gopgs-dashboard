@@ -3,6 +3,7 @@ import { v } from "convex/values";
 import sanitizeHtml from "sanitize-html";
 import { generateSlug } from "../lib/slugUtils";
 import { mutation, query } from "./_generated/server";
+import { revalidateSite } from "./revalidate";
 import { courseType } from "./schema";
 
 type CourseType = Infer<typeof courseType>;
@@ -107,6 +108,7 @@ export const addCourse = mutation({
       slug,
       overview: cleanOverview,
     });
+    await revalidateSite(ctx, ["courses"]);
 
     return courseId;
   },
@@ -162,6 +164,7 @@ export const updateCourse = mutation({
 
     // Perform the update
     await ctx.db.patch(args.id, updateData);
+    await revalidateSite(ctx, ["courses"]);
   },
 });
 
@@ -170,6 +173,7 @@ export const deleteCourse = mutation({
   args: { id: v.id("courses") },
   handler: async (ctx, { id }) => {
     await ctx.db.delete(id);
+    await revalidateSite(ctx, ["courses"]);
   },
 });
 
