@@ -108,7 +108,7 @@ export const addCourse = mutation({
       slug,
       overview: cleanOverview,
     });
-    await revalidateSite(ctx, ["courses"]);
+    await revalidateSite(ctx, ["courses-list", `course:${slug}`]);
 
     return courseId;
   },
@@ -164,7 +164,12 @@ export const updateCourse = mutation({
 
     // Perform the update
     await ctx.db.patch(args.id, updateData);
-    await revalidateSite(ctx, ["courses"]);
+    // Both slugs: the old URL must drop its cached page, the new one must render.
+    await revalidateSite(ctx, [
+      "courses-list",
+      `course:${existingCourse.slug}`,
+      `course:${slug}`,
+    ]);
   },
 });
 
@@ -172,8 +177,10 @@ export const updateCourse = mutation({
 export const deleteCourse = mutation({
   args: { id: v.id("courses") },
   handler: async (ctx, { id }) => {
+    const existing = await ctx.db.get(id);
+    if (!existing) return;
     await ctx.db.delete(id);
-    await revalidateSite(ctx, ["courses"]);
+    await revalidateSite(ctx, ["courses-list", `course:${existing.slug}`]);
   },
 });
 

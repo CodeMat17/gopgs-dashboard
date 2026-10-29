@@ -70,7 +70,7 @@ export const deleteNews = mutation({
     const existing = await ctx.db.get(id);
     if (!existing) return;
     await ctx.db.delete(id);
-    await revalidateSite(ctx, ["news"]);
+    await revalidateSite(ctx, ["news-list", `news:${existing.slug}`]);
     await deleteOrphanedPhotos(ctx, [
       ...photosOf(existing),
       ...legacyCover(existing),
@@ -104,7 +104,7 @@ export const addNews = mutation({
       images: images.length > 0 ? images : undefined,
       views: 0,
     });
-    await revalidateSite(ctx, ["news"]);
+    await revalidateSite(ctx, ["news-list", `news:${slug}`]);
   },
 });
 
@@ -137,7 +137,7 @@ export const updateNews = mutation({
       storageId: undefined,
       updatedOn: new Date().toISOString(),
     });
-    await revalidateSite(ctx, ["news"]);
+    await revalidateSite(ctx, ["news-list", `news:${existing.slug}`]);
 
     const stillUsed = new Set(images.map((p) => p.storageId));
     await deleteOrphanedPhotos(ctx, [
